@@ -41,7 +41,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - agrosangapati_mysql_data:/var/lib/mysql
     environment:
       MYSQL_DATABASE: agrosangapati
       MYSQL_USER: agrosangapati_user
@@ -71,5 +71,5 @@ networks:
     driver: bridge
 
 volumes:
-  mysql_data:
+  agrosangapati_mysql_data:
     driver: local

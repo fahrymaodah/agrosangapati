@@ -24,4 +24,4 @@ yarn-error.log
 Thumbs.db
 
 # Docker
-mysql_data/
+agrosangapati_mysql_data/
