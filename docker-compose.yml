@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Nginx Service
   nginx:
@@ -41,7 +39,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - agrosangapati_mysql_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
     environment:
       MYSQL_DATABASE: agrosangapati
       MYSQL_USER: agrosangapati_user
@@ -71,5 +69,6 @@ networks:
     driver: bridge
 
 volumes:
-  agrosangapati_mysql_data:
+  mysql_data:
+    name: agrosangapati_mysql_data
     driver: local
