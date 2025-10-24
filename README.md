@@ -1,13 +1,13 @@
-# Agrosangapati - Laravel Docker Project
+# Agrosangapati
 
-Project Laravel dengan Docker untuk MacBook Air M1.
+Modern Laravel application with Docker containerization for streamlined development and deployment.
 
-## Persyaratan
+## Prerequisites
 
-- Docker Desktop untuk Mac (dengan dukungan M1)
+- Docker & Docker Compose
 - Git
 
-## Instalasi
+## Installation
 
 ### 1. Clone Repository
 
@@ -16,107 +16,103 @@ git clone <repository-url> agrosangapati
 cd agrosangapati
 ```
 
-### 2. Setup Hosts File
+### 2. Configure Local Domain
 
-Tambahkan domain lokal ke file hosts:
+Add local domain to hosts file:
 
 ```bash
 sudo nano /etc/hosts
 ```
 
-Tambahkan baris berikut:
+Add the following line:
 
 ```
 127.0.0.1    agrosangapati.local
 ```
 
-Simpan dengan `CTRL + O`, lalu `CTRL + X`.
+Save and exit.
 
-### 3. Install Laravel
+### 3. Install Dependencies
 
-Jalankan perintah berikut untuk membuat project Laravel baru:
+Run automated setup script:
 
 ```bash
+./setup.sh
+```
+
+Or manually:
+
+```bash
+# Build and start containers
+docker-compose up -d --build
+
+# Install Laravel
 docker-compose run --rm php composer create-project laravel/laravel .
-```
 
-### 4. Setup Environment
-
-Copy file `.env.example` ke `.env`:
-
-```bash
+# Configure environment
 cp src/.env.example src/.env
-```
 
-Update konfigurasi database di `src/.env`:
+# Update database configuration in src/.env
+# DB_HOST=mysql
+# DB_DATABASE=agrosangapati
+# DB_USERNAME=agrosangapati_user
+# DB_PASSWORD=agrosangapati_pass
 
-```
-DB_CONNECTION=mysql
-DB_HOST=mysql
-DB_PORT=3306
-DB_DATABASE=agrosangapati
-DB_USERNAME=agrosangapati_user
-DB_PASSWORD=agrosangapati_pass
-```
-
-### 5. Generate Application Key
-
-```bash
+# Generate application key
 docker-compose run --rm php php artisan key:generate
-```
 
-### 6. Set Permissions
+# Set permissions
+chmod -R 777 src/storage src/bootstrap/cache
 
-```bash
-sudo chmod -R 777 src/storage src/bootstrap/cache
-```
-
-### 7. Jalankan Docker
-
-```bash
-docker-compose up -d
-```
-
-### 8. Migrasi Database
-
-```bash
+# Run migrations
 docker-compose exec php php artisan migrate
 ```
 
-## Akses Aplikasi
+## Access Points
 
-- **Website**: http://agrosangapati.local
+- **Application**: http://agrosangapati.local
 - **PhpMyAdmin**: http://localhost:8080
+- **Database**: localhost:3306
 
-## Perintah Artisan
+## Development Commands
 
-Untuk menjalankan perintah Laravel Artisan:
+### Artisan Commands
 
 ```bash
 docker-compose exec php php artisan [command]
-```
 
-Contoh:
-```bash
+# Examples
 docker-compose exec php php artisan migrate
 docker-compose exec php php artisan make:controller UserController
+docker-compose exec php php artisan queue:work
 ```
 
-## Perintah Composer
+### Composer Commands
 
 ```bash
 docker-compose exec php composer [command]
+
+# Examples
+docker-compose exec php composer require package/name
+docker-compose exec php composer update
 ```
 
-## Menghentikan Docker
+### Container Management
 
 ```bash
+# Start containers
+docker-compose up -d
+
+# Stop containers
 docker-compose down
-```
 
-## Menghentikan dan Menghapus Volume
+# Restart containers
+docker-compose restart
 
-```bash
+# View logs
+docker-compose logs -f
+
+# Stop and remove volumes
 docker-compose down -v
 ```
 
@@ -124,24 +120,23 @@ docker-compose down -v
 
 ### Permission Issues
 
-Jika ada masalah permission:
-
 ```bash
-sudo chmod -R 777 src/storage src/bootstrap/cache
+chmod -R 777 src/storage src/bootstrap/cache
 ```
 
-### Port Conflict
+### Port Conflicts
 
-Jika port 80 sudah digunakan, edit `docker-compose.yml` dan ubah port nginx:
+If port 80 is already in use, modify `docker-compose.yml`:
 
 ```yaml
-ports:
-  - "8000:80"
+nginx:
+  ports:
+    - "8000:80"
 ```
 
-Lalu akses via: http://agrosangapati.local:8000
+Then access via: http://agrosangapati.local:8000
 
-## Struktur Project
+## Project Structure
 
 ```
 agrosangapati/
@@ -152,10 +147,20 @@ agrosangapati/
 │       └── Dockerfile
 ├── src/                    # Laravel application
 ├── docker-compose.yml
+├── setup.sh               # Automated setup script
+├── Makefile              # Development shortcuts
 ├── .gitignore
 └── README.md
 ```
 
-## Lisensi
+## Technology Stack
+
+- **PHP**: 8.2-FPM
+- **Laravel**: 11.x
+- **Web Server**: Nginx (Alpine)
+- **Database**: MySQL 8.0
+- **Database Management**: PhpMyAdmin
+
+## License
 
 Open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

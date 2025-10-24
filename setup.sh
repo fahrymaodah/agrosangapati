@@ -1,27 +1,27 @@
 #!/bin/bash
 
-# Script untuk setup project Laravel dengan Docker
-# Untuk MacBook Air M1
+# Automated setup script for Agrosangapati Laravel Project
+# Configures Docker environment and installs Laravel
 
-echo "🚀 Memulai setup Agrosangapati Laravel Project..."
+echo "🚀 Starting Agrosangapati setup..."
 
-# Cek apakah Docker sudah running
+# Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
-  echo "❌ Docker tidak berjalan. Silakan start Docker Desktop terlebih dahulu."
+  echo "❌ Docker is not running. Please start Docker Desktop first."
   exit 1
 fi
 
-echo "✅ Docker sudah berjalan"
+echo "✅ Docker is running"
 
-# Build dan start containers
+# Build and start containers
 echo "📦 Building Docker containers..."
 docker-compose up -d --build
 
-# Tunggu MySQL siap
-echo "⏳ Menunggu MySQL siap..."
+# Wait for MySQL to be ready
+echo "⏳ Waiting for MySQL..."
 sleep 10
 
-# Install Laravel jika belum ada
+# Install Laravel if not exists
 if [ ! -f "src/artisan" ]; then
     echo "📥 Installing Laravel..."
     docker-compose run --rm php composer create-project laravel/laravel .
@@ -29,7 +29,7 @@ if [ ! -f "src/artisan" ]; then
     # Setup .env
     if [ -f "src/.env.example" ]; then
         cp src/.env.example src/.env
-        echo "✅ File .env dibuat"
+        echo "✅ Environment file created"
     fi
     
     # Update .env untuk database
@@ -40,31 +40,31 @@ if [ ! -f "src/artisan" ]; then
     
     # Generate key
     docker-compose run --rm php php artisan key:generate
-    echo "✅ Laravel application key generated"
+    echo "✅ Application key generated"
     
     # Set permissions
     chmod -R 777 src/storage src/bootstrap/cache
-    echo "✅ Permissions set"
+    echo "✅ Permissions configured"
     
     # Run migrations
-    echo "🗄️  Running migrations..."
+    echo "🗄️  Running database migrations..."
     docker-compose exec -T php php artisan migrate --force
     
     echo ""
-    echo "🎉 Setup selesai!"
+    echo "🎉 Setup completed successfully!"
 else
-    echo "✅ Laravel sudah terinstall"
+    echo "✅ Laravel already installed"
 fi
 
 echo ""
 echo "═══════════════════════════════════════════════"
-echo "🌐 Aplikasi berjalan di: http://agrosangapati.local"
+echo "🌐 Application: http://agrosangapati.local"
 echo "🗄️  PhpMyAdmin: http://localhost:8080"
 echo "═══════════════════════════════════════════════"
 echo ""
-echo "Perintah berguna:"
-echo "  make logs      - Lihat logs"
-echo "  make shell     - Masuk ke container PHP"
-echo "  make artisan   - Jalankan artisan command"
+echo "Useful commands:"
+echo "  make logs      - View container logs"
+echo "  make shell     - Access PHP container"
+echo "  make artisan   - Run artisan commands"
 echo "  make down      - Stop containers"
 echo ""

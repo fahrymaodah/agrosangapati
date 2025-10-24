@@ -4,37 +4,37 @@
 
 ## Langkah-langkah Push ke GitHub:
 
-### 1. Buat Repository Baru di GitHub
-- Buka https://github.com/new
-- Nama repository: `agrosangapati`
-- Deskripsi: "Project Laravel Agrosangapati dengan Docker"
-- Pilih Public atau Private
-- **JANGAN** centang "Initialize this repository with a README"
-- Klik "Create repository"
+### 1. Create New Repository on GitHub
+- Visit https://github.com/new
+- Repository name: `agrosangapati`
+- Description: "Modern Laravel application with Docker containerization"
+- Choose Public or Private
+- **DO NOT** check "Initialize this repository with a README"
+- Click "Create repository"
 
-### 2. Push Project ke GitHub
+### 2. Push Project to GitHub
 
-Jalankan perintah berikut di terminal:
+Run the following commands in terminal:
 
 ```bash
-# Add semua file
+# Stage all files
 git add .
 
-# Commit pertama
-git commit -m "Initial commit: Laravel project dengan Docker untuk M1"
+# Initial commit
+git commit -m "Initial commit: Laravel Docker setup"
 
-# Tambahkan remote repository (ganti <username> dengan username GitHub Anda)
+# Add remote repository (replace <username> with your GitHub username)
 git remote add origin https://github.com/<username>/agrosangapati.git
 
-# atau jika menggunakan SSH:
+# Or if using SSH:
 # git remote add origin git@github.com:<username>/agrosangapati.git
 
-# Push ke GitHub
+# Push to GitHub
 git branch -M main
 git push -u origin main
 ```
 
-### 3. Clone Repository di Komputer Lain
+### 3. Clone on Another Machine
 
 ```bash
 git clone https://github.com/<username>/agrosangapati.git
@@ -42,69 +42,80 @@ cd agrosangapati
 ./setup.sh
 ```
 
-## Perintah Git Berguna
+## Useful Git Commands
 
 ```bash
-# Cek status
+# Check status
 git status
 
-# Add file baru
+# Stage changes
 git add .
 
-# Commit perubahan
-git commit -m "Pesan commit Anda"
+# Commit changes
+git commit -m "Your commit message"
 
-# Push ke GitHub
+# Push to GitHub
 git push
 
-# Pull perubahan terbaru
+# Pull latest changes
 git pull
 
-# Lihat history commit
-git log --oneline
+# View commit history
+git log --oneline --graph
 
-# Buat branch baru
-git checkout -b nama-branch
+# Create new branch
+git checkout -b branch-name
 
-# Pindah branch
+# Switch branch
 git checkout main
+
+# View all branches
+git branch -a
 ```
 
-## File yang TIDAK akan di-push ke GitHub
+## Files Excluded from Git
 
-File-file berikut sudah tercantum di `.gitignore`:
-- `/src/vendor/` - Dependencies Composer
-- `/src/node_modules/` - Dependencies NPM
-- `/src/.env` - Environment variables (credential database, dll)
-- `/src/storage/` - File temporary Laravel
-- `mysql_data/` - Data MySQL Docker volume
+These files are already listed in `.gitignore`:
+- `/src/vendor/` - Composer dependencies
+- `/src/node_modules/` - NPM dependencies
+- `/src/.env` - Environment variables (sensitive credentials)
+- `/src/storage/` - Laravel temporary files
+- `mysql_data/` - MySQL Docker volume data
 
-## Tips Keamanan
+## Security Best Practices
 
-⚠️ **PENTING**: Jangan pernah commit file `.env` atau credential ke GitHub!
+⚠️ **IMPORTANT**: Never commit `.env` files or credentials to GitHub!
 
-Untuk berbagi konfigurasi dengan team:
-1. Update file `.env.example` dengan variable yang diperlukan (tanpa value sensitif)
-2. Commit file `.env.example`
-3. Setiap developer copy `.env.example` ke `.env` dan isi dengan credential mereka
+For team collaboration:
+1. Update `.env.example` with required variables (without sensitive values)
+2. Commit `.env.example` to repository
+3. Each developer copies `.env.example` to `.env` and fills in their credentials
 
-## Branching Strategy (Opsional)
+## Branching Strategy (Recommended)
 
-Untuk project yang lebih terstruktur:
+For structured development workflow:
 
 ```bash
-# Branch untuk development
+# Development branch
 git checkout -b development
 
-# Branch untuk fitur baru
-git checkout -b feature/nama-fitur
+# Feature branch
+git checkout -b feature/feature-name
 
-# Setelah selesai, merge ke development
+# After completion, merge to development
 git checkout development
-git merge feature/nama-fitur
+git merge feature/feature-name
 
-# Setelah testing OK, merge ke main
+# After testing, merge to main
 git checkout main
 git merge development
 git push
 ```
+
+### Branch Naming Convention
+
+- `feature/*` - New features
+- `bugfix/*` - Bug fixes
+- `hotfix/*` - Production hotfixes
+- `refactor/*` - Code refactoring
+- `docs/*` - Documentation updates
