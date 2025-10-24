@@ -161,6 +161,42 @@ agrosangapati/
 - **Database**: MySQL 8.0
 - **Database Management**: PhpMyAdmin
 
+## Architecture
+
+This project implements the **Service Repository Pattern** for clean architecture and separation of concerns:
+
+- **Repository Layer**: Handles data access and database queries
+- **Service Layer**: Contains business logic and data transformation
+- **Controller Layer**: Manages HTTP requests and responses
+
+For detailed documentation, see [SERVICE_REPOSITORY_PATTERN.md](SERVICE_REPOSITORY_PATTERN.md)
+
+### Example Flow
+```
+HTTP Request → Controller → Service → Repository → Model → Database
+```
+
+### Benefits
+- Clear separation of concerns
+- Highly testable code
+- Easy to maintain and extend
+- Reusable components
+
+## API Documentation
+
+Base URL: `http://agrosangapati.local/api`
+
+### User Endpoints
+- `GET /users` - Get all users (paginated)
+- `GET /users/{id}` - Get specific user
+- `GET /users/search?q={query}` - Search users
+- `GET /users/active` - Get active users
+- `POST /users` - Create new user
+- `PUT /users/{id}` - Update user
+- `DELETE /users/{id}` - Delete user
+
+See [SERVICE_REPOSITORY_PATTERN.md](SERVICE_REPOSITORY_PATTERN.md) for detailed API usage and examples.
+
 ## License
 
 Open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
