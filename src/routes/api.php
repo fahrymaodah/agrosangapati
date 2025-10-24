@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\CashBalanceController;
 use App\Http\Controllers\Api\FinancialReportController;
 use App\Http\Controllers\Api\ConsolidatedReportController;
+use App\Http\Controllers\Api\DashboardController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -103,3 +104,13 @@ Route::prefix('consolidated-reports')->group(function () {
     Route::get('/poktan-comparison', [ConsolidatedReportController::class, 'poktanComparison']);
     Route::get('/summary', [ConsolidatedReportController::class, 'gapoktanSummary']);
 });
+
+// Dashboard API Routes
+Route::prefix('dashboard')->group(function () {
+    // Poktan dashboard
+    Route::get('/poktan/{poktanId}', [DashboardController::class, 'poktanDashboard']);
+    
+    // Gapoktan dashboard (consolidated)
+    Route::get('/gapoktan/{gapoktanId}', [DashboardController::class, 'gapoktanDashboard']);
+});
+

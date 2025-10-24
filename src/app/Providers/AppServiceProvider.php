@@ -13,7 +13,67 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register Repository-Service bindings
+        $this->app->bind(
+            \App\Repositories\TransactionCategoryRepository::class,
+            \App\Repositories\TransactionCategoryRepository::class
+        );
+
+        $this->app->bind(
+            \App\Repositories\TransactionRepository::class,
+            \App\Repositories\TransactionRepository::class
+        );
+
+        $this->app->bind(
+            \App\Repositories\CashBalanceRepository::class,
+            \App\Repositories\CashBalanceRepository::class
+        );
+
+        $this->app->bind(
+            \App\Repositories\FinancialReportRepository::class,
+            \App\Repositories\FinancialReportRepository::class
+        );
+
+        $this->app->bind(
+            \App\Repositories\ConsolidatedReportRepository::class,
+            \App\Repositories\ConsolidatedReportRepository::class
+        );
+
+        $this->app->bind(
+            \App\Repositories\DashboardRepository::class,
+            \App\Repositories\DashboardRepository::class
+        );
+
+        // Register Services
+        $this->app->bind(
+            \App\Services\TransactionCategoryService::class,
+            \App\Services\TransactionCategoryService::class
+        );
+
+        $this->app->bind(
+            \App\Services\TransactionService::class,
+            \App\Services\TransactionService::class
+        );
+
+        $this->app->bind(
+            \App\Services\CashBalanceService::class,
+            \App\Services\CashBalanceService::class
+        );
+
+        $this->app->bind(
+            \App\Services\FinancialReportService::class,
+            \App\Services\FinancialReportService::class
+        );
+
+        $this->app->bind(
+            \App\Services\ConsolidatedReportService::class,
+            \App\Services\ConsolidatedReportService::class
+        );
+
+        $this->app->bind(
+            \App\Services\DashboardService::class,
+            \App\Services\DashboardService::class
+        );
     }
 
     /**
