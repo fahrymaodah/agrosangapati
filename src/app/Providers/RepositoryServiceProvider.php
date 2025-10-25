@@ -17,6 +17,14 @@ use App\Repositories\Contracts\StockMovementRepositoryInterface;
 use App\Repositories\Eloquent\StockMovementRepository;
 use App\Repositories\Contracts\ProductionReportRepositoryInterface;
 use App\Repositories\Eloquent\ProductionReportRepository;
+use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Repositories\Eloquent\ProductRepository;
+use App\Repositories\Contracts\OrderRepositoryInterface;
+use App\Repositories\Eloquent\OrderRepository;
+use App\Repositories\Contracts\ShipmentRepositoryInterface;
+use App\Repositories\Eloquent\ShipmentRepository;
+use App\Repositories\Contracts\SalesDistributionRepositoryInterface;
+use App\Repositories\Eloquent\SalesDistributionRepository;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -67,12 +75,29 @@ class RepositoryServiceProvider extends ServiceProvider
             ProductionReportRepository::class
         );
 
-        // Add more repository bindings here as you create them
-        // Example:
-        // $this->app->bind(
-        //     ProductRepositoryInterface::class,
-        //     ProductRepository::class
-        // );
+        // Bind Product Repository
+        $this->app->bind(
+            ProductRepositoryInterface::class,
+            ProductRepository::class
+        );
+
+        // Bind Order Repository
+        $this->app->bind(
+            OrderRepositoryInterface::class,
+            OrderRepository::class
+        );
+
+        // Bind Shipment Repository
+        $this->app->bind(
+            ShipmentRepositoryInterface::class,
+            ShipmentRepository::class
+        );
+
+        // Bind SalesDistribution Repository
+        $this->app->bind(
+            SalesDistributionRepositoryInterface::class,
+            SalesDistributionRepository::class
+        );
     }
 
     /**

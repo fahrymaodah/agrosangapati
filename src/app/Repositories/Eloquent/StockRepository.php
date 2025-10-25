@@ -53,10 +53,9 @@ class StockRepository extends BaseRepository implements StockRepositoryInterface
             $query->where('poktan_id', $poktanId);
         }
 
+        // Only filter by location if specifically provided
         if ($location !== null) {
             $query->where('location', $location);
-        } else {
-            $query->whereNull('location');
         }
 
         return $query->first();

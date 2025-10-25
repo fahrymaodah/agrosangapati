@@ -230,4 +230,38 @@ class CashBalanceRepository
 
         return $balance;
     }
+
+    /**
+     * Update balance for a poktan (increase or decrease).
+     */
+    public function updateBalance(int $poktanId, float $amount, string $operation = 'increase'): CashBalance
+    {
+        $balance = $this->getBalanceByPoktan($poktanId);
+
+        // If no balance exists, create one
+        if (!$balance) {
+            $balance = CashBalance::create([
+                'poktan_id' => $poktanId,
+                'balance' => 0,
+                'last_updated' => now(),
+            ]);
+        }
+
+        $previousBalance = $balance->balance;
+
+        // Calculate new balance
+        if ($operation === 'increase') {
+            $newBalance = $previousBalance + $amount;
+        } else {
+            $newBalance = $previousBalance - $amount;
+        }
+
+        // Update balance
+        $balance->update([
+            'balance' => $newBalance,
+            'last_updated' => now(),
+        ]);
+
+        return $balance->fresh();
+    }
 }

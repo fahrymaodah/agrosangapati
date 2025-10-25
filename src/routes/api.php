@@ -14,6 +14,12 @@ use App\Http\Controllers\HarvestController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\ProductionReportController;
 use App\Http\Controllers\HarvestDashboardController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ShipmentController;
+use App\Http\Controllers\SalesDistributionController;
+use App\Http\Controllers\Api\SalesReportController;
+use App\Http\Controllers\Api\MarketingDashboardController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -218,4 +224,122 @@ Route::prefix('dashboard/harvest')->group(function () {
     // Gapoktan harvest dashboard
     Route::get('/gapoktan/{gapoktanId}', [HarvestDashboardController::class, 'gapoktanDashboard']); // Complete dashboard
     Route::get('/gapoktan/{gapoktanId}/cards', [HarvestDashboardController::class, 'gapoktanDashboardCards']); // Quick summary cards
+});
+
+// ==================== PRODUCT MANAGEMENT ROUTES (FASE 3: PEMASARAN) ====================
+Route::prefix('products')->group(function () {
+    // Public routes (catalog)
+    Route::get('/catalog', [ProductController::class, 'catalog']); // Public product catalog
+    Route::get('/available', [ProductController::class, 'available']); // Available products (in stock)
+    Route::get('/popular', [ProductController::class, 'popular']); // Popular products by views
+    Route::get('/search', [ProductController::class, 'search']); // Search products
+    
+    // Admin/Gapoktan routes
+    Route::get('/', [ProductController::class, 'index']); // All products
+    Route::get('/statistics', [ProductController::class, 'statistics']); // Product statistics
+    Route::get('/commodity/{commodityId}', [ProductController::class, 'byCommodity']); // Products by commodity
+    Route::get('/status/{status}', [ProductController::class, 'byStatus']); // Products by status
+    Route::get('/{id}', [ProductController::class, 'show']); // Product detail
+    Route::post('/', [ProductController::class, 'store']); // Create product
+    Route::put('/{id}', [ProductController::class, 'update']); // Update product
+    Route::delete('/{id}', [ProductController::class, 'destroy']); // Delete product
+    Route::patch('/{id}/status', [ProductController::class, 'updateStatus']); // Update status only
+    Route::post('/{id}/sync-stock', [ProductController::class, 'syncStock']); // Sync with gapoktan stock
+});
+
+// ==================== ORDER MANAGEMENT ROUTES (FASE 3: PEMASARAN) ====================
+Route::prefix('orders')->group(function () {
+    // Public routes (for customers/buyers)
+    Route::post('/', [OrderController::class, 'store']); // Create order (public)
+    Route::post('/calculate', [OrderController::class, 'calculate']); // Calculate order price (public)
+    Route::get('/track/{orderNumber}', [OrderController::class, 'track']); // Track order by order number (public)
+    Route::get('/by-phone/{phone}', [OrderController::class, 'byPhone']); // Get orders by phone (public)
+    
+    // Admin/Gapoktan routes
+    Route::get('/', [OrderController::class, 'index']); // All orders with filters
+    Route::get('/pending', [OrderController::class, 'pending']); // Pending orders
+    Route::get('/active', [OrderController::class, 'active']); // Active orders
+    Route::get('/completed', [OrderController::class, 'completed']); // Completed orders
+    Route::get('/statistics', [OrderController::class, 'statistics']); // Order statistics
+    Route::get('/{id}', [OrderController::class, 'show']); // Order detail
+    Route::post('/{id}/cancel', [OrderController::class, 'cancel']); // Cancel order
+    
+    // PMR-003: Order management by Gapoktan
+    Route::post('/{id}/confirm', [OrderController::class, 'confirm']); // Confirm order
+    Route::post('/{id}/reject', [OrderController::class, 'reject']); // Reject order
+    Route::patch('/{id}/status', [OrderController::class, 'updateStatus']); // Update order status
+    Route::patch('/{id}/payment-status', [OrderController::class, 'updatePaymentStatus']); // Update payment status
+    Route::post('/{id}/processing', [OrderController::class, 'markAsProcessing']); // Mark as processing
+    Route::post('/{id}/shipped', [OrderController::class, 'markAsShipped']); // Mark as shipped
+    Route::post('/{id}/delivered', [OrderController::class, 'markAsDelivered']); // Mark as delivered
+    
+    // PMR-004: Shipment management (nested under orders)
+    Route::post('/{orderId}/shipment', [ShipmentController::class, 'store']); // Create shipment for order
+    Route::get('/{orderId}/shipment', [ShipmentController::class, 'getByOrderId']); // Get shipment by order ID
+});
+
+// ==================== SHIPMENT MANAGEMENT ROUTES (FASE 3: PEMASARAN) ====================
+Route::prefix('shipments')->group(function () {
+    // Public routes
+    Route::get('/track/{trackingNumber}', [ShipmentController::class, 'track']); // Track by tracking number (public)
+    
+    // Admin/Gapoktan routes
+    Route::get('/', [ShipmentController::class, 'index']); // All shipments with filters
+    Route::get('/in-progress', [ShipmentController::class, 'inProgress']); // In progress shipments
+    Route::get('/late', [ShipmentController::class, 'late']); // Late shipments
+    Route::get('/statistics', [ShipmentController::class, 'statistics']); // Shipment statistics
+    Route::get('/courier/{courier}', [ShipmentController::class, 'byCourier']); // By courier
+    Route::get('/{id}', [ShipmentController::class, 'show']); // Shipment detail
+    Route::put('/{id}', [ShipmentController::class, 'update']); // Update shipment
+    Route::delete('/{id}', [ShipmentController::class, 'destroy']); // Delete shipment
+    
+    // Shipment status updates
+    Route::post('/{id}/picked-up', [ShipmentController::class, 'markAsPickedUp']); // Mark as picked up
+    Route::post('/{id}/in-transit', [ShipmentController::class, 'markAsInTransit']); // Mark as in transit
+    Route::post('/{id}/delivered', [ShipmentController::class, 'markAsDelivered']); // Mark as delivered
+    Route::post('/{id}/proof-photo', [ShipmentController::class, 'uploadProofPhoto']); // Upload proof photo
+});
+
+// ==================== SALES DISTRIBUTION ROUTES (FASE 3: PEMASARAN - PMR-005) ====================
+Route::prefix('sales-distributions')->group(function () {
+    // Admin/Gapoktan routes
+    Route::get('/', [SalesDistributionController::class, 'index']); // All distributions with filters
+    Route::get('/pending', [SalesDistributionController::class, 'getPending']); // Pending distributions
+    Route::get('/paid', [SalesDistributionController::class, 'getPaid']); // Paid distributions
+    Route::get('/statistics', [SalesDistributionController::class, 'getStatistics']); // Distribution statistics
+    Route::get('/pending-summary', [SalesDistributionController::class, 'getPendingPaymentSummary']); // Pending summary by poktan
+    Route::get('/{id}', [SalesDistributionController::class, 'show']); // Distribution detail
+    
+    // Distribution calculation
+    Route::post('/calculate/{orderId}', [SalesDistributionController::class, 'calculateForOrder']); // Calculate for order
+    Route::get('/order/{orderId}', [SalesDistributionController::class, 'getByOrderId']); // Get by order ID
+    
+    // Distribution by poktan
+    Route::get('/poktan/{poktanId}', [SalesDistributionController::class, 'getByPoktanId']); // Get by poktan ID
+    
+    // Payment actions
+    Route::post('/{id}/mark-paid', [SalesDistributionController::class, 'markAsPaid']); // Mark as paid
+    Route::post('/batch-mark-paid', [SalesDistributionController::class, 'batchMarkAsPaid']); // Batch mark as paid
+});
+
+// ==================== SALES REPORT ROUTES (FASE 3: PEMASARAN - PMR-007) ====================
+Route::prefix('reports/sales')->group(function () {
+    Route::get('/summary', [SalesReportController::class, 'summary']); // Sales summary statistics
+    Route::get('/by-product', [SalesReportController::class, 'byProduct']); // Sales by product
+    Route::get('/by-poktan', [SalesReportController::class, 'byPoktan']); // Sales by poktan
+    Route::get('/best-selling', [SalesReportController::class, 'bestSelling']); // Best selling products
+    Route::get('/revenue-analysis', [SalesReportController::class, 'revenueAnalysis']); // Revenue trends
+    Route::get('/top-customers', [SalesReportController::class, 'topCustomers']); // Top customers
+    Route::get('/complete', [SalesReportController::class, 'complete']); // Complete report (all data)
+});
+
+// ==================== MARKETING DASHBOARD ROUTES (FASE 3: PEMASARAN - PMR-008) ====================
+Route::prefix('dashboard/marketing')->group(function () {
+    Route::get('/', [MarketingDashboardController::class, 'index']); // Complete dashboard
+    Route::get('/summary', [MarketingDashboardController::class, 'summary']); // Summary cards
+    Route::get('/quick-summary', [MarketingDashboardController::class, 'quickSummary']); // Quick summary (current month)
+    Route::get('/revenue-trend', [MarketingDashboardController::class, 'revenueTrend']); // Revenue trend chart
+    Route::get('/top-products', [MarketingDashboardController::class, 'topProducts']); // Top selling products
+    Route::get('/recent-orders', [MarketingDashboardController::class, 'recentOrders']); // Recent orders list
+    Route::get('/pending-payments', [MarketingDashboardController::class, 'pendingPayments']); // Pending payments alert
 });

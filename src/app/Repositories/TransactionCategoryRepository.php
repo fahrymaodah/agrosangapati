@@ -41,6 +41,25 @@ class TransactionCategoryRepository
     }
 
     /**
+     * Find a category by name.
+     */
+    public function findByName(string $name, ?int $poktanId = null): ?TransactionCategory
+    {
+        $query = TransactionCategory::where('name', $name);
+        
+        if ($poktanId) {
+            $query->where(function($q) use ($poktanId) {
+                $q->whereNull('poktan_id')
+                  ->orWhere('poktan_id', $poktanId);
+            });
+        } else {
+            $query->whereNull('poktan_id');
+        }
+        
+        return $query->first();
+    }
+
+    /**
      * Create a new category.
      */
     public function create(array $data): TransactionCategory
