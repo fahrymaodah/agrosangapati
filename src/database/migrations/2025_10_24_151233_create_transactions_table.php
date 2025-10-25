@@ -25,6 +25,7 @@ return new class extends Migration
             $table->timestamp('approved_at')->nullable();
             $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
             $table->timestamps();
+            $table->softDeletes();
             
             $table->index(['poktan_id', 'transaction_date']);
             $table->index(['poktan_id', 'transaction_type']);

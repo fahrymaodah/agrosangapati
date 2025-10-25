@@ -9,6 +9,11 @@ use App\Http\Controllers\Api\CashBalanceController;
 use App\Http\Controllers\Api\FinancialReportController;
 use App\Http\Controllers\Api\ConsolidatedReportController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\CommodityController;
+use App\Http\Controllers\HarvestController;
+use App\Http\Controllers\StockController;
+use App\Http\Controllers\ProductionReportController;
+use App\Http\Controllers\HarvestDashboardController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -114,3 +119,103 @@ Route::prefix('dashboard')->group(function () {
     Route::get('/gapoktan/{gapoktanId}', [DashboardController::class, 'gapoktanDashboard']);
 });
 
+// ==================== COMMODITY & GRADE API ROUTES ====================
+
+// Commodity API Routes
+Route::prefix('commodities')->group(function () {
+    // Public read routes
+    Route::get('/', [CommodityController::class, 'index']);
+    Route::get('/search', [CommodityController::class, 'search']);
+    Route::get('/{id}', [CommodityController::class, 'show']);
+    
+    // Commodity CRUD (protected)
+    Route::post('/', [CommodityController::class, 'store']);
+    Route::put('/{id}', [CommodityController::class, 'update']);
+    Route::delete('/{id}', [CommodityController::class, 'destroy']);
+    
+    // Grade routes for specific commodity
+    Route::get('/{commodityId}/grades', [CommodityController::class, 'getGrades']);
+    Route::post('/{commodityId}/grades', [CommodityController::class, 'storeGrade']);
+    Route::get('/{commodityId}/grades/{gradeId}', [CommodityController::class, 'showGrade']);
+    Route::put('/{commodityId}/grades/{gradeId}', [CommodityController::class, 'updateGrade']);
+    Route::delete('/{commodityId}/grades/{gradeId}', [CommodityController::class, 'destroyGrade']);
+});
+
+// All Grades API Route (across all commodities)
+Route::get('/grades', [CommodityController::class, 'getAllGrades']);
+
+// Harvest API Routes
+Route::prefix('harvests')->group(function () {
+    // Public read routes
+    Route::get('/', [HarvestController::class, 'index']); // All harvests for poktan
+    Route::get('/summary', [HarvestController::class, 'summary']); // Summary statistics
+    Route::get('/by-date-range', [HarvestController::class, 'byDateRange']); // Filter by date
+    Route::get('/by-status/{status}', [HarvestController::class, 'byStatus']); // Filter by status
+    Route::get('/member/{memberId}', [HarvestController::class, 'byMember']); // By member
+    Route::get('/{id}', [HarvestController::class, 'show']); // Show detail
+    
+    // Protected routes (require authentication)
+    Route::post('/', [HarvestController::class, 'store']); // Create harvest
+    Route::put('/{id}', [HarvestController::class, 'update']); // Update harvest
+    Route::patch('/{id}/status', [HarvestController::class, 'updateStatus']); // Update status only
+    Route::delete('/{id}', [HarvestController::class, 'destroy']); // Delete harvest
+});
+
+// ==================== STOCK MANAGEMENT ROUTES ====================
+Route::prefix('stocks')->group(function () {
+    // Gapoktan routes (must be before /{id} to avoid conflict)
+    Route::get('/gapoktan', [StockController::class, 'gapoktanStocks']); // All gapoktan stocks
+    Route::get('/gapoktan/summary', [StockController::class, 'gapoktanSummary']); // Gapoktan summary
+    Route::post('/transfer-to-gapoktan', [StockController::class, 'transferToGapoktan']); // Transfer to gapoktan
+    
+    // Public read routes
+    Route::get('/', [StockController::class, 'index']); // All stocks for poktan
+    Route::get('/summary', [StockController::class, 'summary']); // Summary statistics
+    Route::get('/low-stock', [StockController::class, 'lowStock']); // Low stock alert
+    Route::get('/by-location', [StockController::class, 'byLocation']); // By location
+    Route::get('/recent-movements', [StockController::class, 'recentMovements']); // Recent movements
+    Route::get('/{id}', [StockController::class, 'show']); // Show detail
+    Route::get('/{id}/movements', [StockController::class, 'movements']); // Stock movements
+    
+    // Protected routes (require authentication)
+    Route::post('/add', [StockController::class, 'addStock']); // Add stock (incoming)
+    Route::post('/remove', [StockController::class, 'removeStock']); // Remove stock (outgoing)
+    Route::post('/transfer', [StockController::class, 'transferStock']); // Transfer between locations
+    Route::post('/damage', [StockController::class, 'recordDamage']); // Record damaged stock
+});
+
+// ==================== PRODUCTION REPORT ROUTES ====================
+Route::prefix('reports/production')->group(function () {
+    // Member production reports
+    Route::get('/member/{memberId}', [ProductionReportController::class, 'memberReport']); // Complete member report
+    Route::get('/member/{memberId}/summary', [ProductionReportController::class, 'memberSummary']); // Summary only
+    Route::get('/member/{memberId}/by-commodity', [ProductionReportController::class, 'memberByCommodity']); // By commodity
+    Route::get('/member/{memberId}/comparison', [ProductionReportController::class, 'memberComparison']); // Period comparison
+    
+    // Poktan production reports
+    Route::get('/poktan/{poktanId}', [ProductionReportController::class, 'poktanReport']); // Complete poktan report
+    Route::get('/poktan/{poktanId}/summary', [ProductionReportController::class, 'poktanSummary']); // Summary only
+    Route::get('/poktan/{poktanId}/by-commodity', [ProductionReportController::class, 'poktanByCommodity']); // By commodity
+    Route::get('/poktan/{poktanId}/by-member', [ProductionReportController::class, 'poktanByMember']); // By member
+    Route::get('/poktan/{poktanId}/monthly-trend', [ProductionReportController::class, 'poktanMonthlyTrend']); // Monthly trend
+    Route::get('/poktan/{poktanId}/top-producers', [ProductionReportController::class, 'topProducers']); // Top producers ranking
+    
+    // Gapoktan production reports
+    Route::get('/gapoktan/{gapoktanId}', [ProductionReportController::class, 'gapoktanReport']); // Complete gapoktan report
+    Route::get('/gapoktan/{gapoktanId}/summary', [ProductionReportController::class, 'gapoktanSummary']); // Summary only
+    Route::get('/gapoktan/{gapoktanId}/by-commodity', [ProductionReportController::class, 'gapoktanByCommodity']); // By commodity
+    Route::get('/gapoktan/{gapoktanId}/by-poktan', [ProductionReportController::class, 'gapoktanByPoktan']); // By poktan
+    Route::get('/gapoktan/{gapoktanId}/poktan-comparison', [ProductionReportController::class, 'gapoktanPoktanComparison']); // Poktan comparison
+    Route::get('/gapoktan/{gapoktanId}/monthly-trend', [ProductionReportController::class, 'gapoktanMonthlyTrend']); // Monthly trend
+});
+
+// ==================== HARVEST DASHBOARD ROUTES ====================
+Route::prefix('dashboard/harvest')->group(function () {
+    // Poktan harvest dashboard
+    Route::get('/poktan/{poktanId}', [HarvestDashboardController::class, 'poktanDashboard']); // Complete dashboard
+    Route::get('/poktan/{poktanId}/cards', [HarvestDashboardController::class, 'poktanDashboardCards']); // Quick summary cards
+    
+    // Gapoktan harvest dashboard
+    Route::get('/gapoktan/{gapoktanId}', [HarvestDashboardController::class, 'gapoktanDashboard']); // Complete dashboard
+    Route::get('/gapoktan/{gapoktanId}/cards', [HarvestDashboardController::class, 'gapoktanDashboardCards']); // Quick summary cards
+});

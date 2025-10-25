@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->date('established_date')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

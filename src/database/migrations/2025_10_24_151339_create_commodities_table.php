@@ -18,6 +18,7 @@ return new class extends Migration
             $table->decimal('current_market_price', 12, 2)->default(0);
             $table->text('description')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

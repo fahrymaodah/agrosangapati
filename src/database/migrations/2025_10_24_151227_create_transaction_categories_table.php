@@ -18,6 +18,7 @@ return new class extends Migration
             $table->boolean('is_default')->default(false);
             $table->foreignId('poktan_id')->nullable()->constrained()->cascadeOnDelete();
             $table->timestamps();
+            $table->softDeletes();
             
             $table->index(['type', 'poktan_id']);
         });

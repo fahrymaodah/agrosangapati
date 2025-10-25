@@ -21,6 +21,7 @@ return new class extends Migration
             $table->integer('total_members')->default(0);
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

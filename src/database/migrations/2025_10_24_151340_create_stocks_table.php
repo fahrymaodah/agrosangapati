@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('location')->nullable(); // gudang A, gudang B, atau null = gapoktan
             $table->timestamp('last_updated');
             $table->timestamps();
+            $table->softDeletes();
             
             $table->unique(['poktan_id', 'commodity_id', 'grade_id', 'location']);
             $table->index('poktan_id');

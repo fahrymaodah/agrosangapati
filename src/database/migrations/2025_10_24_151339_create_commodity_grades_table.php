@@ -18,6 +18,7 @@ return new class extends Migration
             $table->decimal('price_modifier', 5, 2)->default(0); // persentase dari harga pasar
             $table->text('description')->nullable();
             $table->timestamps();
+            $table->softDeletes();
             
             $table->index('commodity_id');
         });

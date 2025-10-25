@@ -24,6 +24,7 @@ return new class extends Migration
             $table->enum('status', ['stored', 'sold', 'damaged'])->default('stored');
             $table->text('notes')->nullable();
             $table->timestamps();
+            $table->softDeletes();
             
             $table->index(['poktan_id', 'harvest_date']);
             $table->index(['member_id', 'harvest_date']);

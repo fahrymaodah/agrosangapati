@@ -23,6 +23,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
             $table->timestamps();
+            $table->softDeletes();
             
             $table->index(['stock_id', 'created_at']);
         });

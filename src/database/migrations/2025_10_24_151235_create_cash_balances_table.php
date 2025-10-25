@@ -17,6 +17,7 @@ return new class extends Migration
             $table->decimal('balance', 15, 2)->default(0);
             $table->timestamp('last_updated');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

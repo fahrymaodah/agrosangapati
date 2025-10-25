@@ -21,6 +21,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->json('metadata')->nullable(); // For additional data like IP address, device, etc.
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes for faster queries
             $table->index(['transaction_id', 'action']);

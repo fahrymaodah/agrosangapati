@@ -22,6 +22,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->timestamps();
+            $table->softDeletes();
             
             // Indexes for performance
             $table->index('poktan_id');

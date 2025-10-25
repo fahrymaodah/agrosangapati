@@ -61,17 +61,17 @@ class CommoditySeeder extends Seeder
             $grades = [
                 [
                     'grade_name' => 'Grade A (Super)',
-                    'price_modifier' => 1.15, // +15%
+                    'price_modifier' => 15, // +15% from base price
                     'description' => 'Kualitas terbaik, ukuran besar, tidak ada cacat',
                 ],
                 [
                     'grade_name' => 'Grade B (Sedang)',
-                    'price_modifier' => 1.00, // harga standar
+                    'price_modifier' => 0, // 0% = base price
                     'description' => 'Kualitas sedang, ukuran sedang, cacat minimal',
                 ],
                 [
                     'grade_name' => 'Grade C (Ekonomis)',
-                    'price_modifier' => 0.85, // -15%
+                    'price_modifier' => -15, // -15% from base price
                     'description' => 'Kualitas standar, ukuran kecil atau cacat ringan',
                 ],
             ];
