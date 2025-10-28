@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\MarketingDashboardController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\BackupController;
 
 // ============================================================
 // AUTHENTICATION ROUTES (Public - No Auth Required)
@@ -466,3 +467,29 @@ Route::prefix('activity-logs')->middleware('auth:sanctum')->group(function () {
     // Custom logging
     Route::post('/custom', [ActivityLogController::class, 'logCustom']); // Log custom activity
 });
+
+// ============================================================
+// BACKUP ROUTES (FASE 6: ADDITIONAL - ADD-004)
+// ============================================================
+Route::prefix('backups')->middleware('auth:sanctum')->group(function () {
+    // Run backups
+    Route::post('/run/full', [BackupController::class, 'runFull']); // Run full backup (database + files)
+    Route::post('/run/database', [BackupController::class, 'runDatabase']); // Run database-only backup
+    Route::post('/run/files', [BackupController::class, 'runFiles']); // Run files-only backup
+    
+    // List & download
+    Route::get('/', [BackupController::class, 'index']); // List all backups
+    Route::get('/latest', [BackupController::class, 'latest']); // Get latest backup
+    Route::get('/statistics', [BackupController::class, 'statistics']); // Backup statistics
+    Route::get('/{filename}/download', [BackupController::class, 'download']); // Download backup file
+    
+    // Manage
+    Route::delete('/{filename}', [BackupController::class, 'destroy']); // Delete backup
+    Route::post('/cleanup', [BackupController::class, 'cleanup']); // Clean up old backups
+    
+    // Monitor
+    Route::get('/monitor', [BackupController::class, 'monitor']); // Monitor backup health
+    Route::get('/health', [BackupController::class, 'health']); // Check backup health status
+    Route::get('/schedule', [BackupController::class, 'schedule']); // Get backup schedule info
+});
+
