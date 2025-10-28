@@ -21,6 +21,7 @@ use App\Http\Controllers\SalesDistributionController;
 use App\Http\Controllers\Api\SalesReportController;
 use App\Http\Controllers\Api\MarketingDashboardController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PasswordResetController;
 
 // ============================================================
 // AUTHENTICATION ROUTES (Public - No Auth Required)
@@ -38,6 +39,22 @@ Route::prefix('auth')->group(function () {
         Route::post('/refresh-token', [AuthController::class, 'refreshToken']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
     });
+});
+
+// ============================================================
+// PASSWORD RESET ROUTES (Public - No Auth Required)
+// ============================================================
+Route::prefix('password')->group(function () {
+    // Public routes
+    Route::post('/forgot', [PasswordResetController::class, 'forgotPassword']); // Request reset token
+    Route::post('/validate-token', [PasswordResetController::class, 'validateToken']); // Validate token
+    Route::post('/reset', [PasswordResetController::class, 'resetPassword']); // Reset password with token
+    Route::get('/check-token/{email}', [PasswordResetController::class, 'checkToken']); // Check if token exists
+    Route::delete('/cancel', [PasswordResetController::class, 'cancelResetRequest']); // Cancel reset request
+    
+    // Admin/Cron route (protected)
+    Route::post('/cleanup-expired', [PasswordResetController::class, 'cleanupExpired'])
+        ->middleware(['auth:sanctum', 'role:superadmin']); // Only superadmin
 });
 
 Route::get('/user', function (Request $request) {

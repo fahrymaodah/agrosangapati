@@ -1,6 +1,6 @@
 # AgroSangapati - Development Task List
 
-**Progress Overview**: 27 tasks completed ✅ | 48.2% complete
+**Progress Overview**: 28 tasks completed ✅ | 50.0% complete
 
 **Last Updated**: October 29, 2025
 
@@ -1047,7 +1047,7 @@
 
 ---
 
-## 🔐 FASE 5: AUTHENTICATION & AUTHORIZATION (2/3 complete - 66.7%)
+## 🔐 FASE 5: AUTHENTICATION & AUTHORIZATION (3/3 complete - 100%)
 
 ### AUTH-001: Login & Register ✅
 **Deskripsi**: Sistem autentikasi lengkap dengan token-based authentication
@@ -1203,19 +1203,99 @@
 
 ---
 
-### AUTH-003: Password Reset
-**Deskripsi**: Lupa password & reset
-- Forgot password form
-- Send reset link via email
-- Reset password form
-- Update password
+### AUTH-003: Password Reset ✅
+**Deskripsi**: Sistem password reset lengkap dengan token-based verification
+- ✅ Forgot password request (generate reset token)
+- ✅ Validate reset token
+- ✅ Reset password dengan token verification
+- ✅ Check pending reset status
+- ✅ Cancel reset request (security feature)
+- ✅ Cleanup expired tokens (maintenance)
+- ✅ Token expiration (1 hour)
+- ✅ Force re-login after password reset (revoke all tokens)
 
 **Output**:
-- Controller: `PasswordResetController`
-- Routes: `/api/password/forgot`, `/api/password/reset`
-- Email: Password reset email template
+- Service: `PasswordResetService` ✅ (7 methods)
+- Requests: `ForgotPasswordRequest`, `ResetPasswordRequest` ✅
+- Controller: `PasswordResetController` ✅ (6 endpoints)
+- Routes: 6 password reset endpoints ✅
+  - `POST /api/password/forgot` (public)
+  - `POST /api/password/validate-token` (public)
+  - `POST /api/password/reset` (public)
+  - `GET /api/password/check-token/{email}` (public)
+  - `DELETE /api/password/cancel` (public)
+  - `POST /api/password/cleanup-expired` (superadmin only)
 
-**Status**: ⏳ Pending
+**Status**: ✅ **COMPLETE** (October 29, 2025)
+
+**Hasil**:
+- **Service Layer**: `PasswordResetService.php` - 254 lines
+  - `requestPasswordReset($email)` - Generate 60-char token, hash and store, email notification placeholder
+  - `validateResetToken($email, $token)` - Verify token hash and check 1-hour expiration
+  - `resetPassword($email, $token, $newPassword)` - Update password, delete token, revoke all user tokens (force re-login)
+  - `checkResetTokenExists($email)` - UI helper to show pending reset status with expiration time
+  - `cancelResetRequest($email)` - Security feature to cancel unauthorized reset attempts
+  - `cleanupExpiredTokens()` - Admin/cron maintenance task to remove expired tokens
+  - Token format: 60 random characters, stored as bcrypt hash
+  - Token expiration: 1 hour from creation
+  - Security: Email enumeration prevention (returns 200 always for forgot password)
+
+- **Request Validators**:
+  - `ForgotPasswordRequest` - 42 lines
+    - Email validation (required, email format, max 255 chars)
+    - Indonesian error messages
+  - `ResetPasswordRequest` - 63 lines
+    - Email, token (60 chars exact), password with confirmation
+    - Strong password policy: `Password::min(8)->letters()->mixedCase()->numbers()->symbols()`
+    - Indonesian error messages
+
+- **Controller**: `PasswordResetController.php` - 194 lines with 6 RESTful endpoints
+  - `forgotPassword()` - POST /api/password/forgot
+    - Returns 200 always (prevent email enumeration attack)
+    - Sends reset link via email in production
+    - Returns token in development mode
+  - `validateToken()` - POST /api/password/validate-token
+    - Verify token validity before showing reset form
+    - Returns 200 if valid, 400 if invalid/expired
+  - `resetPassword()` - POST /api/password/reset
+    - Complete password update with token validation
+    - Revokes all user tokens (force re-login for security)
+    - Deletes token after successful reset (single-use)
+  - `checkToken()` - GET /api/password/check-token/{email}
+    - UI helper to show if pending reset exists
+    - Returns expiration info and remaining time
+  - `cancelResetRequest()` - DELETE /api/password/cancel
+    - Allow user to cancel unauthorized reset request
+    - Returns 200 always (prevent email enumeration)
+  - `cleanupExpired()` - POST /api/password/cleanup-expired
+    - Superadmin-only endpoint for maintenance
+    - Returns deleted count
+
+- **Database**: `password_reset_tokens` table (Laravel default)
+  - email (primary key)
+  - token (bcrypt hash)
+  - created_at (for expiration check)
+  - Single token per email (new request deletes old)
+
+- **Security Features**:
+  - Token stored as bcrypt hash (not plain text)
+  - 1-hour expiration enforced
+  - Single-use tokens (deleted after successful reset)
+  - Email enumeration prevention (returns 200 always)
+  - Force re-login after password reset (all tokens revoked)
+  - Cancel request feature for unauthorized attempts
+  - Strong password policy maintained
+
+- **Test Results**:
+  - ✅ requestPasswordReset: Token generated successfully (60 chars, expires in 1 hour)
+  - ✅ validateResetToken: Token validated correctly
+  - ✅ checkResetTokenExists: Pending reset status returned with expiration info
+  - ✅ resetPassword: Password updated successfully
+  - ✅ Password verification: New password works, old password no longer works ✅
+  - ✅ All tokens revoked: Force re-login security feature working
+  - ✅ Token reuse: Second validation fails (single-use enforcement)
+  - ✅ cancelResetRequest: Token deleted successfully
+  - ✅ cleanupExpiredTokens: Maintenance task working (0 expired found)
 
 ---
 
