@@ -20,68 +20,96 @@ use App\Http\Controllers\ShipmentController;
 use App\Http\Controllers\SalesDistributionController;
 use App\Http\Controllers\Api\SalesReportController;
 use App\Http\Controllers\Api\MarketingDashboardController;
+use App\Http\Controllers\Api\AuthController;
+
+// ============================================================
+// AUTHENTICATION ROUTES (Public - No Auth Required)
+// ============================================================
+Route::prefix('auth')->group(function () {
+    // Public routes
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    
+    // Protected routes (require authentication)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::post('/logout-all', [AuthController::class, 'logoutAll']);
+        Route::get('/me', [AuthController::class, 'me']);
+        Route::post('/refresh-token', [AuthController::class, 'refreshToken']);
+        Route::post('/change-password', [AuthController::class, 'changePassword']);
+    });
+});
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-// User API Routes
-Route::prefix('users')->group(function () {
+// ============================================================
+// USER MANAGEMENT ROUTES (Protected - Requires Authentication)
+// ============================================================
+Route::prefix('users')->middleware(['auth:sanctum', 'permission:view-users'])->group(function () {
     Route::get('/', [UserController::class, 'index']);
     Route::get('/search', [UserController::class, 'search']);
     Route::get('/active', [UserController::class, 'active']);
     Route::get('/{id}', [UserController::class, 'show']);
-    Route::post('/', [UserController::class, 'store']);
-    Route::put('/{id}', [UserController::class, 'update']);
-    Route::delete('/{id}', [UserController::class, 'destroy']);
+    
+    // Management routes (require manage-users permission)
+    Route::middleware('permission:manage-users')->group(function () {
+        Route::post('/', [UserController::class, 'store']);
+        Route::put('/{id}', [UserController::class, 'update']);
+        Route::delete('/{id}', [UserController::class, 'destroy']);
+    });
 });
 
-// Transaction Category API Routes
-Route::prefix('transaction-categories')->group(function () {
-    // Public routes (read-only, for viewing available categories)
+// ============================================================
+// TRANSACTION CATEGORY ROUTES (Protected)
+// ============================================================
+Route::prefix('transaction-categories')->middleware('auth:sanctum')->group(function () {
+    // Read routes (all authenticated users can view)
     Route::get('/', [TransactionCategoryController::class, 'index']);
     Route::get('/income', [TransactionCategoryController::class, 'income']);
     Route::get('/expense', [TransactionCategoryController::class, 'expense']);
     Route::get('/{id}', [TransactionCategoryController::class, 'show']);
 
-    // Protected routes (require authentication and proper roles)
-    Route::middleware(['role:superadmin,ketua_gapoktan,pengurus_gapoktan,ketua_poktan,pengurus_poktan'])->group(function () {
+    // Management routes (require manage-categories permission)
+    Route::middleware('permission:manage-categories')->group(function () {
         Route::post('/', [TransactionCategoryController::class, 'store']);
         Route::put('/{id}', [TransactionCategoryController::class, 'update']);
         Route::delete('/{id}', [TransactionCategoryController::class, 'destroy']);
     });
 });
 
-// Transaction API Routes
-Route::prefix('transactions')->group(function () {
-    // Public read routes
+// ============================================================
+// TRANSACTION ROUTES (Protected)
+// ============================================================
+Route::prefix('transactions')->middleware(['auth:sanctum', 'permission:view-transactions'])->group(function () {
+    // Read routes
     Route::get('/', [TransactionController::class, 'index']);
     Route::get('/pending', [TransactionController::class, 'pending']);
     Route::get('/recent', [TransactionController::class, 'recent']);
     Route::get('/summary', [TransactionController::class, 'summary']);
     Route::get('/{id}', [TransactionController::class, 'show']);
+    Route::get('/{id}/approval-history', [TransactionController::class, 'approvalHistory']);
 
-    // Protected routes (require authentication and proper roles)
-    Route::middleware(['role:superadmin,ketua_gapoktan,pengurus_gapoktan,ketua_poktan,pengurus_poktan,anggota'])->group(function () {
+    // Management routes (require manage-transactions permission)
+    Route::middleware('permission:manage-transactions')->group(function () {
         Route::post('/', [TransactionController::class, 'store']);
         Route::put('/{id}', [TransactionController::class, 'update']);
         Route::delete('/{id}', [TransactionController::class, 'destroy']);
     });
 
-    // Approval route (only for ketua/pengurus)
-    Route::middleware(['role:superadmin,ketua_gapoktan,pengurus_gapoktan,ketua_poktan,pengurus_poktan'])->group(function () {
+    // Approval routes (require approve-transactions permission)
+    Route::middleware('permission:approve-transactions')->group(function () {
         Route::post('/{id}/approve', [TransactionController::class, 'approve']);
         Route::post('/{id}/reject', [TransactionController::class, 'reject']);
         Route::post('/bulk-approve', [TransactionController::class, 'bulkApprove']);
     });
-
-    // Approval history route (public for transparency)
-    Route::get('/{id}/approval-history', [TransactionController::class, 'approvalHistory']);
 });
 
-// Cash Balance API Routes
-Route::prefix('cash-balances')->group(function () {
-    // Public read routes (all authenticated users can view)
+// ============================================================
+// CASH BALANCE ROUTES (Protected - View Permission Required)
+// ============================================================
+Route::prefix('cash-balances')->middleware(['auth:sanctum', 'permission:view-cash-balance'])->group(function () {
     Route::get('/', [CashBalanceController::class, 'index']); // All balances
     Route::get('/total', [CashBalanceController::class, 'total']); // Total balance
     Route::get('/alerts', [CashBalanceController::class, 'alerts']); // Low balance alerts
@@ -94,9 +122,10 @@ Route::prefix('cash-balances')->group(function () {
     Route::post('/{poktanId}/can-transact', [CashBalanceController::class, 'canTransact']); // Check if transaction allowed
 });
 
-// Financial Report API Routes
-Route::prefix('financial-reports')->group(function () {
-    // All report routes are read-only
+// ============================================================
+// FINANCIAL REPORT ROUTES (Protected - Poktan Level)
+// ============================================================
+Route::prefix('financial-reports')->middleware(['auth:sanctum', 'permission:view-poktan-reports'])->group(function () {
     Route::get('/income-statement', [FinancialReportController::class, 'incomeStatement']);
     Route::get('/cash-flow', [FinancialReportController::class, 'cashFlow']);
     Route::get('/balance-sheet', [FinancialReportController::class, 'balanceSheet']);
@@ -105,9 +134,10 @@ Route::prefix('financial-reports')->group(function () {
     Route::get('/comparative', [FinancialReportController::class, 'comparative']);
 });
 
-// Consolidated Report API Routes (Gapoktan Level)
-Route::prefix('consolidated-reports')->group(function () {
-    // All consolidated report routes are read-only
+// ============================================================
+// CONSOLIDATED REPORT ROUTES (Protected - Gapoktan Level Only)
+// ============================================================
+Route::prefix('consolidated-reports')->middleware(['auth:sanctum', 'permission:view-consolidated-reports'])->group(function () {
     Route::get('/income-statement', [ConsolidatedReportController::class, 'consolidatedIncomeStatement']);
     Route::get('/cash-flow', [ConsolidatedReportController::class, 'consolidatedCashFlow']);
     Route::get('/balance-sheet', [ConsolidatedReportController::class, 'consolidatedBalanceSheet']);
@@ -116,43 +146,49 @@ Route::prefix('consolidated-reports')->group(function () {
     Route::get('/summary', [ConsolidatedReportController::class, 'gapoktanSummary']);
 });
 
-// Dashboard API Routes
-Route::prefix('dashboard')->group(function () {
-    // Poktan dashboard
-    Route::get('/poktan/{poktanId}', [DashboardController::class, 'poktanDashboard']);
+// ============================================================
+// DASHBOARD ROUTES (Protected)
+// ============================================================
+Route::prefix('dashboard')->middleware('auth:sanctum')->group(function () {
+    // Poktan dashboard (poktan-level users can access)
+    Route::get('/poktan/{poktanId}', [DashboardController::class, 'poktanDashboard'])
+        ->middleware('permission:view-poktan-dashboard');
     
-    // Gapoktan dashboard (consolidated)
-    Route::get('/gapoktan/{gapoktanId}', [DashboardController::class, 'gapoktanDashboard']);
+    // Gapoktan dashboard (gapoktan-level users only)
+    Route::get('/gapoktan/{gapoktanId}', [DashboardController::class, 'gapoktanDashboard'])
+        ->middleware('permission:view-gapoktan-dashboard');
 });
 
-// ==================== COMMODITY & GRADE API ROUTES ====================
-
-// Commodity API Routes
-Route::prefix('commodities')->group(function () {
-    // Public read routes
+// ============================================================
+// COMMODITY & GRADE ROUTES (Protected)
+// ============================================================
+Route::prefix('commodities')->middleware('auth:sanctum')->group(function () {
+    // Read routes (all authenticated users can view)
     Route::get('/', [CommodityController::class, 'index']);
     Route::get('/search', [CommodityController::class, 'search']);
     Route::get('/{id}', [CommodityController::class, 'show']);
-    
-    // Commodity CRUD (protected)
-    Route::post('/', [CommodityController::class, 'store']);
-    Route::put('/{id}', [CommodityController::class, 'update']);
-    Route::delete('/{id}', [CommodityController::class, 'destroy']);
-    
-    // Grade routes for specific commodity
     Route::get('/{commodityId}/grades', [CommodityController::class, 'getGrades']);
-    Route::post('/{commodityId}/grades', [CommodityController::class, 'storeGrade']);
     Route::get('/{commodityId}/grades/{gradeId}', [CommodityController::class, 'showGrade']);
-    Route::put('/{commodityId}/grades/{gradeId}', [CommodityController::class, 'updateGrade']);
-    Route::delete('/{commodityId}/grades/{gradeId}', [CommodityController::class, 'destroyGrade']);
+    
+    // Management routes (gapoktan level only)
+    Route::middleware('permission:manage-commodities')->group(function () {
+        Route::post('/', [CommodityController::class, 'store']);
+        Route::put('/{id}', [CommodityController::class, 'update']);
+        Route::delete('/{id}', [CommodityController::class, 'destroy']);
+        Route::post('/{commodityId}/grades', [CommodityController::class, 'storeGrade']);
+        Route::put('/{commodityId}/grades/{gradeId}', [CommodityController::class, 'updateGrade']);
+        Route::delete('/{commodityId}/grades/{gradeId}', [CommodityController::class, 'destroyGrade']);
+    });
 });
 
-// All Grades API Route (across all commodities)
-Route::get('/grades', [CommodityController::class, 'getAllGrades']);
+// All Grades API Route (Protected)
+Route::get('/grades', [CommodityController::class, 'getAllGrades'])->middleware('auth:sanctum');
 
-// Harvest API Routes
-Route::prefix('harvests')->group(function () {
-    // Public read routes
+// ============================================================
+// HARVEST ROUTES (Protected)
+// ============================================================
+Route::prefix('harvests')->middleware(['auth:sanctum', 'permission:view-production-reports'])->group(function () {
+    // Read routes
     Route::get('/', [HarvestController::class, 'index']); // All harvests for poktan
     Route::get('/summary', [HarvestController::class, 'summary']); // Summary statistics
     Route::get('/by-date-range', [HarvestController::class, 'byDateRange']); // Filter by date
@@ -160,21 +196,26 @@ Route::prefix('harvests')->group(function () {
     Route::get('/member/{memberId}', [HarvestController::class, 'byMember']); // By member
     Route::get('/{id}', [HarvestController::class, 'show']); // Show detail
     
-    // Protected routes (require authentication)
-    Route::post('/', [HarvestController::class, 'store']); // Create harvest
-    Route::put('/{id}', [HarvestController::class, 'update']); // Update harvest
-    Route::patch('/{id}/status', [HarvestController::class, 'updateStatus']); // Update status only
-    Route::delete('/{id}', [HarvestController::class, 'destroy']); // Delete harvest
+    // Management routes (require manage-harvests permission)
+    Route::middleware('permission:manage-harvests')->group(function () {
+        Route::post('/', [HarvestController::class, 'store']); // Create harvest
+        Route::put('/{id}', [HarvestController::class, 'update']); // Update harvest
+        Route::patch('/{id}/status', [HarvestController::class, 'updateStatus']); // Update status only
+        Route::delete('/{id}', [HarvestController::class, 'destroy']); // Delete harvest
+    });
 });
 
-// ==================== STOCK MANAGEMENT ROUTES ====================
-Route::prefix('stocks')->group(function () {
-    // Gapoktan routes (must be before /{id} to avoid conflict)
-    Route::get('/gapoktan', [StockController::class, 'gapoktanStocks']); // All gapoktan stocks
-    Route::get('/gapoktan/summary', [StockController::class, 'gapoktanSummary']); // Gapoktan summary
-    Route::post('/transfer-to-gapoktan', [StockController::class, 'transferToGapoktan']); // Transfer to gapoktan
+// ============================================================
+// STOCK MANAGEMENT ROUTES (Protected)
+// ============================================================
+Route::prefix('stocks')->middleware(['auth:sanctum', 'permission:view-stocks'])->group(function () {
+    // Gapoktan stock routes (gapoktan level only)
+    Route::middleware('permission:view-gapoktan-stocks')->group(function () {
+        Route::get('/gapoktan', [StockController::class, 'gapoktanStocks']); // All gapoktan stocks
+        Route::get('/gapoktan/summary', [StockController::class, 'gapoktanSummary']); // Gapoktan summary
+    });
     
-    // Public read routes
+    // Read routes (poktan level)
     Route::get('/', [StockController::class, 'index']); // All stocks for poktan
     Route::get('/summary', [StockController::class, 'summary']); // Summary statistics
     Route::get('/low-stock', [StockController::class, 'lowStock']); // Low stock alert
@@ -183,15 +224,23 @@ Route::prefix('stocks')->group(function () {
     Route::get('/{id}', [StockController::class, 'show']); // Show detail
     Route::get('/{id}/movements', [StockController::class, 'movements']); // Stock movements
     
-    // Protected routes (require authentication)
-    Route::post('/add', [StockController::class, 'addStock']); // Add stock (incoming)
-    Route::post('/remove', [StockController::class, 'removeStock']); // Remove stock (outgoing)
-    Route::post('/transfer', [StockController::class, 'transferStock']); // Transfer between locations
-    Route::post('/damage', [StockController::class, 'recordDamage']); // Record damaged stock
+    // Management routes (require manage-stocks permission)
+    Route::middleware('permission:manage-stocks')->group(function () {
+        Route::post('/add', [StockController::class, 'addStock']); // Add stock (incoming)
+        Route::post('/remove', [StockController::class, 'removeStock']); // Remove stock (outgoing)
+        Route::post('/transfer', [StockController::class, 'transferStock']); // Transfer between locations
+        Route::post('/damage', [StockController::class, 'recordDamage']); // Record damaged stock
+    });
+    
+    // Transfer to gapoktan (require transfer-to-gapoktan permission)
+    Route::post('/transfer-to-gapoktan', [StockController::class, 'transferToGapoktan'])
+        ->middleware('permission:transfer-to-gapoktan');
 });
 
-// ==================== PRODUCTION REPORT ROUTES ====================
-Route::prefix('reports/production')->group(function () {
+// ============================================================
+// PRODUCTION REPORT ROUTES (Protected)
+// ============================================================
+Route::prefix('reports/production')->middleware(['auth:sanctum', 'permission:view-production-reports'])->group(function () {
     // Member production reports
     Route::get('/member/{memberId}', [ProductionReportController::class, 'memberReport']); // Complete member report
     Route::get('/member/{memberId}/summary', [ProductionReportController::class, 'memberSummary']); // Summary only
@@ -206,103 +255,128 @@ Route::prefix('reports/production')->group(function () {
     Route::get('/poktan/{poktanId}/monthly-trend', [ProductionReportController::class, 'poktanMonthlyTrend']); // Monthly trend
     Route::get('/poktan/{poktanId}/top-producers', [ProductionReportController::class, 'topProducers']); // Top producers ranking
     
-    // Gapoktan production reports
-    Route::get('/gapoktan/{gapoktanId}', [ProductionReportController::class, 'gapoktanReport']); // Complete gapoktan report
-    Route::get('/gapoktan/{gapoktanId}/summary', [ProductionReportController::class, 'gapoktanSummary']); // Summary only
-    Route::get('/gapoktan/{gapoktanId}/by-commodity', [ProductionReportController::class, 'gapoktanByCommodity']); // By commodity
-    Route::get('/gapoktan/{gapoktanId}/by-poktan', [ProductionReportController::class, 'gapoktanByPoktan']); // By poktan
-    Route::get('/gapoktan/{gapoktanId}/poktan-comparison', [ProductionReportController::class, 'gapoktanPoktanComparison']); // Poktan comparison
-    Route::get('/gapoktan/{gapoktanId}/monthly-trend', [ProductionReportController::class, 'gapoktanMonthlyTrend']); // Monthly trend
+    // Gapoktan production reports (gapoktan level only)
+    Route::middleware('permission:view-gapoktan-production')->group(function () {
+        Route::get('/gapoktan/{gapoktanId}', [ProductionReportController::class, 'gapoktanReport']); // Complete gapoktan report
+        Route::get('/gapoktan/{gapoktanId}/summary', [ProductionReportController::class, 'gapoktanSummary']); // Summary only
+        Route::get('/gapoktan/{gapoktanId}/by-commodity', [ProductionReportController::class, 'gapoktanByCommodity']); // By commodity
+        Route::get('/gapoktan/{gapoktanId}/by-poktan', [ProductionReportController::class, 'gapoktanByPoktan']); // By poktan
+        Route::get('/gapoktan/{gapoktanId}/poktan-comparison', [ProductionReportController::class, 'gapoktanPoktanComparison']); // Poktan comparison
+        Route::get('/gapoktan/{gapoktanId}/monthly-trend', [ProductionReportController::class, 'gapoktanMonthlyTrend']); // Monthly trend
+    });
 });
 
-// ==================== HARVEST DASHBOARD ROUTES ====================
-Route::prefix('dashboard/harvest')->group(function () {
+// ============================================================
+// HARVEST DASHBOARD ROUTES (Protected)
+// ============================================================
+Route::prefix('dashboard/harvest')->middleware('auth:sanctum')->group(function () {
     // Poktan harvest dashboard
-    Route::get('/poktan/{poktanId}', [HarvestDashboardController::class, 'poktanDashboard']); // Complete dashboard
-    Route::get('/poktan/{poktanId}/cards', [HarvestDashboardController::class, 'poktanDashboardCards']); // Quick summary cards
+    Route::middleware('permission:view-poktan-dashboard')->group(function () {
+        Route::get('/poktan/{poktanId}', [HarvestDashboardController::class, 'poktanDashboard']); // Complete dashboard
+        Route::get('/poktan/{poktanId}/cards', [HarvestDashboardController::class, 'poktanDashboardCards']); // Quick summary cards
+    });
     
-    // Gapoktan harvest dashboard
-    Route::get('/gapoktan/{gapoktanId}', [HarvestDashboardController::class, 'gapoktanDashboard']); // Complete dashboard
-    Route::get('/gapoktan/{gapoktanId}/cards', [HarvestDashboardController::class, 'gapoktanDashboardCards']); // Quick summary cards
+    // Gapoktan harvest dashboard (gapoktan level only)
+    Route::middleware('permission:view-gapoktan-dashboard')->group(function () {
+        Route::get('/gapoktan/{gapoktanId}', [HarvestDashboardController::class, 'gapoktanDashboard']); // Complete dashboard
+        Route::get('/gapoktan/{gapoktanId}/cards', [HarvestDashboardController::class, 'gapoktanDashboardCards']); // Quick summary cards
+    });
 });
 
-// ==================== PRODUCT MANAGEMENT ROUTES (FASE 3: PEMASARAN) ====================
+// ============================================================
+// PRODUCT MANAGEMENT ROUTES (FASE 3: PEMASARAN)
+// ============================================================
 Route::prefix('products')->group(function () {
-    // Public routes (catalog)
+    // Public routes (catalog) - NO authentication required
     Route::get('/catalog', [ProductController::class, 'catalog']); // Public product catalog
     Route::get('/available', [ProductController::class, 'available']); // Available products (in stock)
     Route::get('/popular', [ProductController::class, 'popular']); // Popular products by views
     Route::get('/search', [ProductController::class, 'search']); // Search products
     
-    // Admin/Gapoktan routes
-    Route::get('/', [ProductController::class, 'index']); // All products
-    Route::get('/statistics', [ProductController::class, 'statistics']); // Product statistics
-    Route::get('/commodity/{commodityId}', [ProductController::class, 'byCommodity']); // Products by commodity
-    Route::get('/status/{status}', [ProductController::class, 'byStatus']); // Products by status
-    Route::get('/{id}', [ProductController::class, 'show']); // Product detail
-    Route::post('/', [ProductController::class, 'store']); // Create product
-    Route::put('/{id}', [ProductController::class, 'update']); // Update product
-    Route::delete('/{id}', [ProductController::class, 'destroy']); // Delete product
-    Route::patch('/{id}/status', [ProductController::class, 'updateStatus']); // Update status only
-    Route::post('/{id}/sync-stock', [ProductController::class, 'syncStock']); // Sync with gapoktan stock
+    // Protected routes (gapoktan level - require authentication)
+    Route::middleware(['auth:sanctum', 'permission:manage-products'])->group(function () {
+        Route::get('/', [ProductController::class, 'index']); // All products
+        Route::get('/statistics', [ProductController::class, 'statistics']); // Product statistics
+        Route::get('/commodity/{commodityId}', [ProductController::class, 'byCommodity']); // Products by commodity
+        Route::get('/status/{status}', [ProductController::class, 'byStatus']); // Products by status
+        Route::get('/{id}', [ProductController::class, 'show']); // Product detail
+        Route::post('/', [ProductController::class, 'store']); // Create product
+        Route::put('/{id}', [ProductController::class, 'update']); // Update product
+        Route::delete('/{id}', [ProductController::class, 'destroy']); // Delete product
+        Route::patch('/{id}/status', [ProductController::class, 'updateStatus']); // Update status only
+        Route::post('/{id}/sync-stock', [ProductController::class, 'syncStock']); // Sync with gapoktan stock
+    });
 });
 
-// ==================== ORDER MANAGEMENT ROUTES (FASE 3: PEMASARAN) ====================
+// ============================================================
+// ORDER MANAGEMENT ROUTES (FASE 3: PEMASARAN)
+// ============================================================
 Route::prefix('orders')->group(function () {
-    // Public routes (for customers/buyers)
+    // Public routes (for customers/buyers) - NO authentication required
     Route::post('/', [OrderController::class, 'store']); // Create order (public)
     Route::post('/calculate', [OrderController::class, 'calculate']); // Calculate order price (public)
     Route::get('/track/{orderNumber}', [OrderController::class, 'track']); // Track order by order number (public)
     Route::get('/by-phone/{phone}', [OrderController::class, 'byPhone']); // Get orders by phone (public)
     
-    // Admin/Gapoktan routes
-    Route::get('/', [OrderController::class, 'index']); // All orders with filters
-    Route::get('/pending', [OrderController::class, 'pending']); // Pending orders
-    Route::get('/active', [OrderController::class, 'active']); // Active orders
-    Route::get('/completed', [OrderController::class, 'completed']); // Completed orders
-    Route::get('/statistics', [OrderController::class, 'statistics']); // Order statistics
-    Route::get('/{id}', [OrderController::class, 'show']); // Order detail
-    Route::post('/{id}/cancel', [OrderController::class, 'cancel']); // Cancel order
-    
-    // PMR-003: Order management by Gapoktan
-    Route::post('/{id}/confirm', [OrderController::class, 'confirm']); // Confirm order
-    Route::post('/{id}/reject', [OrderController::class, 'reject']); // Reject order
-    Route::patch('/{id}/status', [OrderController::class, 'updateStatus']); // Update order status
-    Route::patch('/{id}/payment-status', [OrderController::class, 'updatePaymentStatus']); // Update payment status
-    Route::post('/{id}/processing', [OrderController::class, 'markAsProcessing']); // Mark as processing
-    Route::post('/{id}/shipped', [OrderController::class, 'markAsShipped']); // Mark as shipped
-    Route::post('/{id}/delivered', [OrderController::class, 'markAsDelivered']); // Mark as delivered
-    
-    // PMR-004: Shipment management (nested under orders)
-    Route::post('/{orderId}/shipment', [ShipmentController::class, 'store']); // Create shipment for order
-    Route::get('/{orderId}/shipment', [ShipmentController::class, 'getByOrderId']); // Get shipment by order ID
+    // Protected routes (gapoktan level - require authentication)
+    Route::middleware(['auth:sanctum', 'permission:manage-orders'])->group(function () {
+        Route::get('/', [OrderController::class, 'index']); // All orders with filters
+        Route::get('/pending', [OrderController::class, 'pending']); // Pending orders
+        Route::get('/active', [OrderController::class, 'active']); // Active orders
+        Route::get('/completed', [OrderController::class, 'completed']); // Completed orders
+        Route::get('/statistics', [OrderController::class, 'statistics']); // Order statistics
+        Route::get('/{id}', [OrderController::class, 'show']); // Order detail
+        Route::post('/{id}/cancel', [OrderController::class, 'cancel']); // Cancel order
+        
+        // Order management (process-orders permission)
+        Route::middleware('permission:process-orders')->group(function () {
+            Route::post('/{id}/confirm', [OrderController::class, 'confirm']); // Confirm order
+            Route::post('/{id}/reject', [OrderController::class, 'reject']); // Reject order
+            Route::patch('/{id}/status', [OrderController::class, 'updateStatus']); // Update order status
+            Route::patch('/{id}/payment-status', [OrderController::class, 'updatePaymentStatus']); // Update payment status
+            Route::post('/{id}/processing', [OrderController::class, 'markAsProcessing']); // Mark as processing
+            Route::post('/{id}/shipped', [OrderController::class, 'markAsShipped']); // Mark as shipped
+            Route::post('/{id}/delivered', [OrderController::class, 'markAsDelivered']); // Mark as delivered
+        });
+        
+        // Shipment management (nested under orders)
+        Route::middleware('permission:manage-shipments')->group(function () {
+            Route::post('/{orderId}/shipment', [ShipmentController::class, 'store']); // Create shipment for order
+            Route::get('/{orderId}/shipment', [ShipmentController::class, 'getByOrderId']); // Get shipment by order ID
+        });
+    });
 });
 
-// ==================== SHIPMENT MANAGEMENT ROUTES (FASE 3: PEMASARAN) ====================
+// ============================================================
+// SHIPMENT MANAGEMENT ROUTES (FASE 3: PEMASARAN)
+// ============================================================
 Route::prefix('shipments')->group(function () {
-    // Public routes
+    // Public routes - NO authentication required
     Route::get('/track/{trackingNumber}', [ShipmentController::class, 'track']); // Track by tracking number (public)
     
-    // Admin/Gapoktan routes
-    Route::get('/', [ShipmentController::class, 'index']); // All shipments with filters
-    Route::get('/in-progress', [ShipmentController::class, 'inProgress']); // In progress shipments
-    Route::get('/late', [ShipmentController::class, 'late']); // Late shipments
-    Route::get('/statistics', [ShipmentController::class, 'statistics']); // Shipment statistics
-    Route::get('/courier/{courier}', [ShipmentController::class, 'byCourier']); // By courier
-    Route::get('/{id}', [ShipmentController::class, 'show']); // Shipment detail
-    Route::put('/{id}', [ShipmentController::class, 'update']); // Update shipment
-    Route::delete('/{id}', [ShipmentController::class, 'destroy']); // Delete shipment
-    
-    // Shipment status updates
-    Route::post('/{id}/picked-up', [ShipmentController::class, 'markAsPickedUp']); // Mark as picked up
-    Route::post('/{id}/in-transit', [ShipmentController::class, 'markAsInTransit']); // Mark as in transit
-    Route::post('/{id}/delivered', [ShipmentController::class, 'markAsDelivered']); // Mark as delivered
-    Route::post('/{id}/proof-photo', [ShipmentController::class, 'uploadProofPhoto']); // Upload proof photo
+    // Protected routes (gapoktan level - require authentication)
+    Route::middleware(['auth:sanctum', 'permission:manage-shipments'])->group(function () {
+        Route::get('/', [ShipmentController::class, 'index']); // All shipments with filters
+        Route::get('/in-progress', [ShipmentController::class, 'inProgress']); // In progress shipments
+        Route::get('/late', [ShipmentController::class, 'late']); // Late shipments
+        Route::get('/statistics', [ShipmentController::class, 'statistics']); // Shipment statistics
+        Route::get('/courier/{courier}', [ShipmentController::class, 'byCourier']); // By courier
+        Route::get('/{id}', [ShipmentController::class, 'show']); // Shipment detail
+        Route::put('/{id}', [ShipmentController::class, 'update']); // Update shipment
+        Route::delete('/{id}', [ShipmentController::class, 'destroy']); // Delete shipment
+        
+        // Shipment status updates
+        Route::post('/{id}/picked-up', [ShipmentController::class, 'markAsPickedUp']); // Mark as picked up
+        Route::post('/{id}/in-transit', [ShipmentController::class, 'markAsInTransit']); // Mark as in transit
+        Route::post('/{id}/delivered', [ShipmentController::class, 'markAsDelivered']); // Mark as delivered
+        Route::post('/{id}/proof-photo', [ShipmentController::class, 'uploadProofPhoto']); // Upload proof photo
+    });
 });
 
-// ==================== SALES DISTRIBUTION ROUTES (FASE 3: PEMASARAN - PMR-005) ====================
-Route::prefix('sales-distributions')->group(function () {
-    // Admin/Gapoktan routes
+// ============================================================
+// SALES DISTRIBUTION ROUTES (FASE 3: PEMASARAN - PMR-005)
+// ============================================================
+Route::prefix('sales-distributions')->middleware(['auth:sanctum', 'permission:manage-distributions'])->group(function () {
     Route::get('/', [SalesDistributionController::class, 'index']); // All distributions with filters
     Route::get('/pending', [SalesDistributionController::class, 'getPending']); // Pending distributions
     Route::get('/paid', [SalesDistributionController::class, 'getPaid']); // Paid distributions
@@ -322,8 +396,10 @@ Route::prefix('sales-distributions')->group(function () {
     Route::post('/batch-mark-paid', [SalesDistributionController::class, 'batchMarkAsPaid']); // Batch mark as paid
 });
 
-// ==================== SALES REPORT ROUTES (FASE 3: PEMASARAN - PMR-007) ====================
-Route::prefix('reports/sales')->group(function () {
+// ============================================================
+// SALES REPORT ROUTES (FASE 3: PEMASARAN - PMR-007)
+// ============================================================
+Route::prefix('reports/sales')->middleware(['auth:sanctum', 'permission:view-gapoktan-reports'])->group(function () {
     Route::get('/summary', [SalesReportController::class, 'summary']); // Sales summary statistics
     Route::get('/by-product', [SalesReportController::class, 'byProduct']); // Sales by product
     Route::get('/by-poktan', [SalesReportController::class, 'byPoktan']); // Sales by poktan
@@ -333,8 +409,10 @@ Route::prefix('reports/sales')->group(function () {
     Route::get('/complete', [SalesReportController::class, 'complete']); // Complete report (all data)
 });
 
-// ==================== MARKETING DASHBOARD ROUTES (FASE 3: PEMASARAN - PMR-008) ====================
-Route::prefix('dashboard/marketing')->group(function () {
+// ============================================================
+// MARKETING DASHBOARD ROUTES (FASE 3: PEMASARAN - PMR-008)
+// ============================================================
+Route::prefix('dashboard/marketing')->middleware(['auth:sanctum', 'permission:view-gapoktan-dashboard'])->group(function () {
     Route::get('/', [MarketingDashboardController::class, 'index']); // Complete dashboard
     Route::get('/summary', [MarketingDashboardController::class, 'summary']); // Summary cards
     Route::get('/quick-summary', [MarketingDashboardController::class, 'quickSummary']); // Quick summary (current month)

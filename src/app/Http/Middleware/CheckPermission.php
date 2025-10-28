@@ -4,19 +4,20 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 
-class CheckRole
+class CheckPermission
 {
     /**
      * Handle an incoming request.
      *
-     * Check if the authenticated user has one of the allowed roles.
+     * Check if the authenticated user has the required permission gate.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     * @param  string  ...$roles  List of allowed roles
+     * @param  string  $permission  The permission gate name to check
      */
-    public function handle(Request $request, Closure $next, string ...$roles): Response
+    public function handle(Request $request, Closure $next, string $permission): Response
     {
         // Check if user is authenticated
         if (!auth()->check()) {
@@ -32,30 +33,22 @@ class CheckRole
             return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
         }
 
-        $user = auth()->user();
-
-        // Superadmin can access everything
-        if ($user->role === 'superadmin') {
-            return $next($request);
-        }
-
-        // Check if user has one of the allowed roles
-        if (!in_array($user->role, $roles)) {
+        // Check permission using Gate
+        if (Gate::denies($permission)) {
             // API request - return JSON
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Forbidden. You do not have permission to access this resource.',
-                    'required_roles' => $roles,
-                    'your_role' => $user->role
+                    'message' => 'Forbidden. You do not have the required permission.',
+                    'required_permission' => $permission,
+                    'your_role' => auth()->user()->role
                 ], 403);
             }
             
             // Web request - abort with 403
-            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+            abort(403, 'Anda tidak memiliki izin untuk mengakses resource ini.');
         }
 
         return $next($request);
     }
 }
-

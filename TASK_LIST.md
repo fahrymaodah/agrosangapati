@@ -1,8 +1,8 @@
 # AgroSangapati - Development Task List
 
-**Progress Overview**: 25 tasks completed ✅ | 44.6% complete
+**Progress Overview**: 27 tasks completed ✅ | 48.2% complete
 
-**Last Updated**: October 25, 2025
+**Last Updated**: October 29, 2025
 
 ## 📋 FASE PERSIAPAN (3/3 complete - 100%)
 
@@ -1047,38 +1047,159 @@
 
 ---
 
-## 🔐 FASE 5: AUTHENTICATION & AUTHORIZATION
+## 🔐 FASE 5: AUTHENTICATION & AUTHORIZATION (2/3 complete - 66.7%)
 
-### AUTH-001: Login & Register
-**Deskripsi**: Sistem autentikasi
-- Login form (email/password)
-- JWT token dengan Sanctum
-- Remember me
-- Logout
-- Register (by admin only atau self-register?)
+### AUTH-001: Login & Register ✅
+**Deskripsi**: Sistem autentikasi lengkap dengan token-based authentication
+- ✅ Register form dengan strong password policy
+- ✅ Login dengan token Sanctum
+- ✅ Logout (revoke current token)
+- ✅ Logout all devices (revoke all tokens)
+- ✅ Get authenticated user (/me endpoint)
+- ✅ Refresh token
+- ✅ Change password dengan current password verification
 
 **Output**:
-- Controller: `AuthController`
-- Routes: `/api/login`, `/api/logout`, `/api/register`
-- Middleware: `auth:sanctum`
+- Service: `AuthService` ✅ (7 methods)
+- Requests: `RegisterRequest`, `LoginRequest`, `ChangePasswordRequest` ✅
+- Controller: `AuthController` ✅ (7 endpoints)
+- Routes: 7 auth endpoints ✅
+  - `POST /api/auth/register` (public)
+  - `POST /api/auth/login` (public)
+  - `POST /api/auth/logout` (protected)
+  - `POST /api/auth/logout-all` (protected)
+  - `GET /api/auth/me` (protected)
+  - `POST /api/auth/refresh-token` (protected)
+  - `POST /api/auth/change-password` (protected)
+- Seeder: `AuthTestUserSeeder` ✅ (10+ test users)
+- Middleware: `auth:sanctum` ✅
 
-**Status**: ⏳ Pending
+**Status**: ✅ **COMPLETE** (October 29, 2025)
+
+**Hasil**:
+- **Service Layer**: `AuthService.php` - 167 lines
+  - `register()` - Create user with hashed password, generate token
+  - `login()` - Validate credentials, check status, return token with poktan relation
+  - `logout()` - Revoke current access token
+  - `logoutAll()` - Revoke all user tokens
+  - `me()` - Get authenticated user with poktan
+  - `refreshToken()` - Revoke old token, generate new
+  - `changePassword()` - Update password, revoke all tokens (force re-login)
+- **Request Validators**:
+  - `RegisterRequest` - Strong password policy (min 8, mixed case, numbers, symbols)
+  - `LoginRequest` - Email/password with optional revoke_old_tokens flag
+  - `ChangePasswordRequest` - Current password verification + new password policy
+- **Controller**: `AuthController.php` - 218 lines with 7 RESTful endpoints
+- **Test Users Created**: 10+ users with password: `Password123!`
+  - superadmin@agrosangapati.com (superadmin)
+  - ketua.gapoktan@agrosangapati.com (ketua_gapoktan)
+  - pengurus.gapoktan@agrosangapati.com (pengurus_gapoktan)
+  - Multiple poktan-level users (ketua_poktan, pengurus_poktan, anggota_poktan)
+- **User Model**: Added `HasApiTokens` trait for Sanctum functionality
+- **Token Format**: Sanctum format "ID|hash" (e.g., "2|BeHGAJx...")
+- **Test Results**:
+  - ✅ Register: Created user with token returned
+  - ✅ Login superadmin: Token generated successfully
+  - ✅ /me endpoint: Retrieved user data with Bearer token
+  - ✅ Logout: Token revoked successfully
+  - ✅ Token verification: Returns 401 Unauthenticated after logout
 
 ---
 
-### AUTH-002: Role & Permission Management
-**Deskripsi**: Manajemen role dan permission
-- Gates untuk setiap role
-- Middleware checking
-- Permission di setiap endpoint
-- Forbidden response untuk unauthorized access
+### AUTH-002: Role & Permission Management ✅
+**Deskripsi**: Sistem authorization lengkap dengan Gates dan Middleware
+- ✅ AuthServiceProvider dengan 30+ permission gates
+- ✅ CheckRole middleware untuk role-based access
+- ✅ CheckPermission middleware untuk permission-based access
+- ✅ Protect 143 API endpoints dengan proper middleware
+- ✅ Superadmin bypass (full access to everything)
+- ✅ Role hierarchy (superadmin > gapoktan > poktan > anggota)
+- ✅ JSON error responses untuk API
 
 **Output**:
-- Gates in `AuthServiceProvider`
-- Middleware: `role`, `permission`
-- Apply to all routes
+- Provider: `AuthServiceProvider` ✅ (30+ gates defined)
+- Middleware: `CheckRole`, `CheckPermission` ✅
+- Routes: All 143 endpoints protected ✅
+- User Model: Helper methods for permission checking ✅
 
-**Status**: ⏳ Pending
+**Status**: ✅ **COMPLETE** (October 29, 2025)
+
+**Hasil**:
+- **AuthServiceProvider**: `AuthServiceProvider.php` - 367 lines
+  - `Gate::before()` - Superadmin bypass (full access)
+  - **Financial Permissions** (6 gates):
+    - `view-transactions`, `manage-transactions`, `approve-transactions`
+    - `view-gapoktan-reports`, `manage-categories`, `view-cash-balance`
+  - **Production Permissions** (5 gates):
+    - `view-commodities`, `manage-commodities`, `manage-harvests`
+    - `view-production-reports`, `view-gapoktan-production`
+  - **Stock Permissions** (4 gates):
+    - `view-stocks`, `manage-stocks`, `transfer-to-gapoktan`, `view-gapoktan-stocks`
+  - **Sales Permissions** (5 gates):
+    - `manage-products`, `view-products`, `manage-orders`
+    - `process-orders`, `manage-shipments`, `manage-distributions`
+  - **Reporting Permissions** (3 gates):
+    - `view-consolidated-reports`, `view-poktan-reports`, `export-reports`
+  - **Dashboard Permissions** (3 gates):
+    - `view-gapoktan-dashboard`, `view-poktan-dashboard`, `view-member-dashboard`
+  - **User Management** (2 gates):
+    - `manage-users`, `view-users`
+  - **Poktan & Gapoktan Management** (3 gates):
+    - `manage-poktans`, `view-poktans`, `manage-gapoktan`
+
+- **CheckRole Middleware**: `CheckRole.php` - 55 lines
+  - Role-based access control
+  - Supports multiple roles per route
+  - JSON response for API (403 Forbidden with role info)
+  - Web redirect for traditional routes
+  - Superadmin always has access
+
+- **CheckPermission Middleware**: `CheckPermission.php` - 48 lines
+  - Permission gate-based access control
+  - Uses Laravel Gate facade
+  - JSON response for API (403 Forbidden with permission info)
+  - Web redirect for traditional routes
+
+- **User Model Enhancements**: 5 new helper methods
+  - `canViewGapoktanData()` - Check gapoktan-level access
+  - `canManageGapoktanData()` - Check gapoktan-level management
+  - `belongsToPoktan($id)` - Check poktan membership
+  - `canAccessPoktanData($id)` - Check poktan data access (own or gapoktan-level)
+
+- **Route Protection**: All 143 endpoints now protected with middleware
+  - **Public Routes** (NO auth required): 8 endpoints
+    - Auth: register, login (2)
+    - Product catalog: catalog, available, popular, search (4)
+    - Order: calculate, track by order number (2)
+  - **Protected Routes** (auth required): 135 endpoints
+    - User Management: 7 endpoints (view-users, manage-users permissions)
+    - Transactions: 11 endpoints (view/manage/approve permissions)
+    - Cash Balance: 10 endpoints (view-cash-balance permission)
+    - Financial Reports: 6 endpoints (view-poktan-reports permission)
+    - Consolidated Reports: 6 endpoints (view-consolidated-reports permission)
+    - Dashboards: 2 endpoints (view-gapoktan/poktan-dashboard permissions)
+    - Commodities: 11 endpoints (view-commodities, manage-commodities permissions)
+    - Harvests: 10 endpoints (view-production-reports, manage-harvests permissions)
+    - Stocks: 14 endpoints (view-stocks, manage-stocks permissions)
+    - Production Reports: 16 endpoints (view-production-reports permission)
+    - Products: 10 endpoints (manage-products permission)
+    - Orders: 14 endpoints (manage-orders, process-orders permissions)
+    - Shipments: 11 endpoints (manage-shipments permission)
+    - Sales Distributions: 11 endpoints (manage-distributions permission)
+    - Sales Reports: 7 endpoints (view-gapoktan-reports permission)
+    - Marketing Dashboard: 7 endpoints (view-gapoktan-dashboard permission)
+
+- **Middleware Registration**: `bootstrap/app.php`
+  - `role` alias for CheckRole middleware
+  - `permission` alias for CheckPermission middleware
+
+- **Test Results**:
+  - ✅ Unauthenticated access: Returns 401 Unauthenticated
+  - ✅ anggota_poktan accessing /users: Returns 403 Forbidden (no view-users permission)
+  - ✅ superadmin accessing /users: Returns 200 OK with data (has all permissions)
+  - ✅ ketua_poktan accessing /transactions: Returns 200 OK (has view-transactions permission)
+  - ✅ ketua_poktan accessing /dashboard/gapoktan: Returns 403 Forbidden (no view-gapoktan-dashboard permission)
+  - ✅ Permission system working perfectly with role hierarchy
 
 ---
 

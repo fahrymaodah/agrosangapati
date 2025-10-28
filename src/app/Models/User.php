@@ -9,11 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -155,6 +156,44 @@ class User extends Authenticatable
     public function canManageData(): bool
     {
         return !$this->isAnggotaPoktan();
+    }
+
+    /**
+     * Check if user has permission to view gapoktan-level data.
+     */
+    public function canViewGapoktanData(): bool
+    {
+        return in_array($this->role, ['superadmin', 'ketua_gapoktan', 'pengurus_gapoktan']);
+    }
+
+    /**
+     * Check if user has permission to manage gapoktan-level data.
+     */
+    public function canManageGapoktanData(): bool
+    {
+        return in_array($this->role, ['superadmin', 'ketua_gapoktan', 'pengurus_gapoktan']);
+    }
+
+    /**
+     * Check if user belongs to a specific poktan.
+     */
+    public function belongsToPoktan(int $poktanId): bool
+    {
+        return $this->poktan_id === $poktanId;
+    }
+
+    /**
+     * Check if user can access poktan data (own poktan for poktan-level users, any poktan for gapoktan-level).
+     */
+    public function canAccessPoktanData(int $poktanId): bool
+    {
+        // Superadmin and gapoktan level can access all poktans
+        if ($this->canViewGapoktanData()) {
+            return true;
+        }
+
+        // Poktan level can only access their own poktan
+        return $this->belongsToPoktan($poktanId);
     }
 
     /**
