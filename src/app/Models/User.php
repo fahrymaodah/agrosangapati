@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,7 +15,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, SoftDeletes, HasApiTokens, LogsActivity;
@@ -94,6 +96,28 @@ class User extends Authenticatable
     public function isSuperadmin(): bool
     {
         return $this->role === 'superadmin';
+    }
+
+    /**
+     * Determine if user can access Filament admin panel.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // Only active users can access
+        if ($this->status !== 'active') {
+            return false;
+        }
+
+        // Allow all roles to access admin panel
+        // We'll control specific features via policies and navigation
+        return in_array($this->role, [
+            'superadmin',
+            'ketua_gapoktan',
+            'pengurus_gapoktan',
+            'ketua_poktan',
+            'pengurus_poktan',
+            'anggota',
+        ]);
     }
 
     /**
