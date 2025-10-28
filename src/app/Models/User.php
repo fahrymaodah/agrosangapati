@@ -116,7 +116,7 @@ class User extends Authenticatable implements FilamentUser
             'pengurus_gapoktan',
             'ketua_poktan',
             'pengurus_poktan',
-            'anggota',
+            'anggota_poktan',  // Fixed: changed from 'anggota' to 'anggota_poktan'
         ]);
     }
 
