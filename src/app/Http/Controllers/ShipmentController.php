@@ -3,16 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Services\ShipmentService;
+use App\Services\Contracts\FileUploadServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 class ShipmentController extends Controller
 {
     protected $shipmentService;
+    protected $fileUploadService;
 
-    public function __construct(ShipmentService $shipmentService)
-    {
+    public function __construct(
+        ShipmentService $shipmentService,
+        FileUploadServiceInterface $fileUploadService
+    ) {
         $this->shipmentService = $shipmentService;
+        $this->fileUploadService = $fileUploadService;
     }
 
     /**
@@ -286,10 +291,20 @@ class ShipmentController extends Controller
                 'photo' => 'required|image|max:5120', // Max 5MB
             ]);
 
-            // Store photo
-            $path = $request->file('photo')->store('shipments/proof', 'public');
+            // Upload photo using FileUploadService with optimization
+            $result = $this->fileUploadService->uploadImage(
+                $request->file('photo'),
+                'shipments/proof',
+                [
+                    'optimize' => true,
+                    'max_image_width' => 1600,
+                    'max_image_height' => 1200,
+                    'image_quality' => 85,
+                    'generate_thumbnail' => false,
+                ]
+            );
 
-            $shipment = $this->shipmentService->uploadProofPhoto($id, $path);
+            $shipment = $this->shipmentService->uploadProofPhoto($id, $result['path']);
 
             return response()->json([
                 'success' => true,

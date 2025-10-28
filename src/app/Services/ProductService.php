@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\StockRepositoryInterface;
+use App\Services\Contracts\FileUploadServiceInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -13,13 +14,16 @@ class ProductService
 {
     protected ProductRepositoryInterface $productRepository;
     protected StockRepositoryInterface $stockRepository;
+    protected FileUploadServiceInterface $fileUploadService;
 
     public function __construct(
         ProductRepositoryInterface $productRepository,
-        StockRepositoryInterface $stockRepository
+        StockRepositoryInterface $stockRepository,
+        FileUploadServiceInterface $fileUploadService
     ) {
         $this->productRepository = $productRepository;
         $this->stockRepository = $stockRepository;
+        $this->fileUploadService = $fileUploadService;
     }
 
     /**
@@ -118,13 +122,20 @@ class ProductService
             throw new \Exception("Stok yang tersedia hanya {$gapoktanStock->quantity} {$data['unit']}.");
         }
 
-        // Handle product photos upload (if provided)
+        // Handle product photos upload (if provided) using FileUploadService
         if (isset($data['product_photos']) && is_array($data['product_photos'])) {
             $photos = [];
             foreach ($data['product_photos'] as $photo) {
                 if ($photo instanceof \Illuminate\Http\UploadedFile) {
-                    $path = $photo->store('products', 'public');
-                    $photos[] = $path;
+                    $result = $this->fileUploadService->uploadImage($photo, 'products', [
+                        'optimize' => true,
+                        'max_image_width' => 1200,
+                        'max_image_height' => 1200,
+                        'image_quality' => 85,
+                        'generate_thumbnail' => true,
+                        'thumbnail_size' => 300,
+                    ]);
+                    $photos[] = $result['path'];
                 }
             }
             $data['product_photos'] = $photos;
@@ -168,19 +179,32 @@ class ProductService
             }
         }
 
-        // Handle new photos upload
+        // Handle new photos upload using FileUploadService
         if (isset($data['product_photos']) && is_array($data['product_photos'])) {
             $newPhotos = [];
             $existingPhotos = $product->product_photos ?? [];
 
             foreach ($data['product_photos'] as $photo) {
                 if ($photo instanceof \Illuminate\Http\UploadedFile) {
-                    $path = $photo->store('products', 'public');
-                    $newPhotos[] = $path;
+                    $result = $this->fileUploadService->uploadImage($photo, 'products', [
+                        'optimize' => true,
+                        'max_image_width' => 1200,
+                        'max_image_height' => 1200,
+                        'image_quality' => 85,
+                        'generate_thumbnail' => true,
+                        'thumbnail_size' => 300,
+                    ]);
+                    $newPhotos[] = $result['path'];
                 } elseif (is_string($photo)) {
                     // Keep existing photo paths
                     $newPhotos[] = $photo;
                 }
+            }
+            
+            // Delete photos that were removed
+            $photosToDelete = array_diff($existingPhotos, $newPhotos);
+            if (!empty($photosToDelete)) {
+                $this->fileUploadService->deleteMultiple($photosToDelete);
             }
             
             $data['product_photos'] = $newPhotos;
@@ -199,11 +223,9 @@ class ProductService
             throw new \Exception('Produk tidak ditemukan.');
         }
 
-        // Delete product photos from storage
+        // Delete product photos from storage using FileUploadService
         if ($product->product_photos) {
-            foreach ($product->product_photos as $photo) {
-                Storage::disk('public')->delete($photo);
-            }
+            $this->fileUploadService->deleteMultiple($product->product_photos);
         }
 
         return $this->productRepository->delete($id);

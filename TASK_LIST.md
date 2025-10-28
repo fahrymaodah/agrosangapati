@@ -1,6 +1,6 @@
 # AgroSangapati - Development Task List
 
-**Progress Overview**: 32 tasks completed ✅ | 57.1% complete
+**Progress Overview**: 33 tasks completed ✅ | 58.9% complete
 
 **Last Updated**: October 29, 2025
 
@@ -1316,21 +1316,72 @@
 
 ---
 
-### ADD-002: Upload & File Management
-**Deskripsi**: Sistem upload file yang aman
-- Upload foto transaksi
-- Upload foto panen
-- Upload foto produk
-- Upload bukti pengiriman
-- Storage management (public/private)
-- Image optimization
+### ADD-002: Upload & File Management ✅
+**Deskripsi**: Sistem upload file yang aman dengan image optimization dan thumbnail generation
+- ✅ Upload foto transaksi (receipts) dengan optimization
+- ✅ Upload foto panen (harvests) dengan optimization & thumbnail
+- ✅ Upload foto produk (products) dengan multiple photos support & thumbnails
+- ✅ Upload bukti pengiriman (shipments) dengan optimization
+- ✅ Storage management (Laravel public disk)
+- ✅ Image optimization (auto-resize, compress, thumbnail generation)
+- ✅ File validation (size, type, dimensions, MIME)
+- ✅ Automatic file cleanup (delete old files on update)
 
 **Output**:
-- Service: `FileUploadService`
-- Storage: `storage/app/public/`
-- Symlink: `php artisan storage:link`
+- Service: `FileUploadService` ✅ (350+ lines, 11 methods)
+- Interface: `FileUploadServiceInterface` ✅ (dependency injection)
+- ServiceProvider: Registered in `RepositoryServiceProvider` ✅
+- Package: `intervention/image-laravel` v1.5.6 ✅
+- Refactored Modules: 4 services/controllers using FileUploadService
+  - `TransactionService` ✅ (receipts: 1200x1200, 80% quality, no thumbnails)
+  - `HarvestService` ✅ (harvests: 1600x1200, 85% quality, 400px thumbnails)
+  - `ProductService` ✅ (products: 1200x1200, 85% quality, 300px thumbnails, multiple photos)
+  - `ShipmentController` ✅ (shipments: 1600x1200, 85% quality, no thumbnails)
 
-**Status**: ⏳ Pending
+**Status**: ✅ **COMPLETE** (October 29, 2025)
+
+**Hasil**:
+- **FileUploadService Methods** (11 public methods):
+  1. `uploadImage($file, $directory, $options)` - Upload with optimization & thumbnail
+  2. `uploadFile($file, $directory, $allowedTypes)` - General file upload with validation
+  3. `deleteFile($path)` - Delete single file from storage
+  4. `deleteMultiple($paths)` - Batch delete with success counter
+  5. `optimizeImage($path, $maxWidth, $maxHeight, $quality)` - Resize & compress existing image
+  6. `generateThumbnail($path, $size)` - Create square thumbnail in /thumbnails subdirectory
+  7. `getUrl($path)` - Get public URL of stored file
+  8. `exists($path)` - Check if file exists
+  9. `getSize($path)` - Get file size in bytes
+  10. `validateImage($file)` - Validate image size, type, dimensions
+  11. `validateFile($file, $allowedTypes)` - Validate general file with allowed types
+- **Configuration**:
+  - Default max size: 10MB (10240 KB)
+  - Default max dimensions: 1920x1080 (Full HD)
+  - Default quality: 85% (balance between quality & file size)
+  - Default thumbnail: 300x300 square (cover/crop mode)
+  - Supported image formats: jpg, jpeg, png, gif, webp
+  - Supported document formats: pdf, doc, docx, xls, xlsx
+  - Storage: Laravel public disk (`storage/app/public/`)
+  - Filename format: YmdHis_8random.ext (e.g., 20251029143056_aB3dEf9h.jpg)
+- **Per-Module Configuration**:
+  - Transactions: 1200x1200 max, 80% quality, no thumbnails (small receipts)
+  - Harvests: 1600x1200 max, 85% quality, 400px thumbnails (high quality)
+  - Products: 1200x1200 max, 85% quality, 300px thumbnails (multiple photos support)
+  - Shipments: 1600x1200 max, 85% quality, no thumbnails (proof of delivery)
+- **Features**:
+  - Automatic image resize if exceeds max dimensions
+  - Automatic compression with configurable quality
+  - Optional thumbnail generation (square with cover mode)
+  - Indonesian error messages for validation
+  - Automatic file cleanup on update/delete
+  - Multiple photos support (ProductService)
+  - Dependency injection pattern (testable & maintainable)
+- **Integration Testing**: ✅ All services successfully resolve FileUploadService
+  - TransactionService: ✅ Integration working
+  - HarvestService: ✅ Integration working
+  - ProductService: ✅ Integration working
+  - ShipmentController: ✅ Integration working
+  - 9 public methods accessible
+  - No errors during testing
 
 ---
 
@@ -1495,9 +1546,9 @@
 ## 📊 Summary
 
 **Total Tasks**: 56 tasks  
-**Completed**: 32 tasks ✅ (57.1%)  
+**Completed**: 33 tasks ✅ (58.9%)  
 **In Progress**: 0 tasks  
-**Pending**: 24 tasks
+**Pending**: 23 tasks
 
 ### Progress by Phase:
 - **Fase Persiapan**: 3/3 tasks (100%) ✅✅✅

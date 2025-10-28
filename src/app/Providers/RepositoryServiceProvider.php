@@ -25,6 +25,8 @@ use App\Repositories\Contracts\ShipmentRepositoryInterface;
 use App\Repositories\Eloquent\ShipmentRepository;
 use App\Repositories\Contracts\SalesDistributionRepositoryInterface;
 use App\Repositories\Eloquent\SalesDistributionRepository;
+use App\Services\Contracts\FileUploadServiceInterface;
+use App\Services\FileUploadService;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -97,6 +99,12 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(
             SalesDistributionRepositoryInterface::class,
             SalesDistributionRepository::class
+        );
+
+        // Bind FileUpload Service
+        $this->app->singleton(
+            FileUploadServiceInterface::class,
+            FileUploadService::class
         );
     }
 

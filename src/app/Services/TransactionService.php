@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Repositories\TransactionRepository;
 use App\Repositories\TransactionCategoryRepository;
+use App\Services\Contracts\FileUploadServiceInterface;
 use App\Models\CashBalance;
 use App\Models\CashBalanceHistory;
 use App\Models\Transaction;
@@ -19,13 +20,16 @@ class TransactionService
 {
     protected TransactionRepository $repository;
     protected TransactionCategoryRepository $categoryRepository;
+    protected FileUploadServiceInterface $fileUploadService;
 
     public function __construct(
         TransactionRepository $repository,
-        TransactionCategoryRepository $categoryRepository
+        TransactionCategoryRepository $categoryRepository,
+        FileUploadServiceInterface $fileUploadService
     ) {
         $this->repository = $repository;
         $this->categoryRepository = $categoryRepository;
+        $this->fileUploadService = $fileUploadService;
     }
 
     /**
@@ -194,9 +198,9 @@ class TransactionService
 
             // Handle receipt photo upload
             if (isset($data['receipt_photo']) && $data['receipt_photo'] instanceof UploadedFile) {
-                // Delete old photo
+                // Delete old photo using FileUploadService
                 if ($transaction->receipt_photo) {
-                    Storage::disk('public')->delete($transaction->receipt_photo);
+                    $this->fileUploadService->deleteFile($transaction->receipt_photo);
                 }
                 $data['receipt_photo'] = $this->uploadReceiptPhoto($data['receipt_photo'], $transaction->poktan_id);
             }
@@ -387,14 +391,21 @@ class TransactionService
     }
 
     /**
-     * Upload receipt photo.
+     * Upload receipt photo using FileUploadService.
      */
     protected function uploadReceiptPhoto(UploadedFile $file, int $poktanId): string
     {
-        $filename = 'receipt_' . $poktanId . '_' . time() . '.' . $file->getClientOriginalExtension();
-        $path = $file->storeAs('receipts', $filename, 'public');
+        $directory = 'receipts/poktan_' . $poktanId;
         
-        return $path;
+        $result = $this->fileUploadService->uploadImage($file, $directory, [
+            'optimize' => true,
+            'max_image_width' => 1200,
+            'max_image_height' => 1200,
+            'image_quality' => 80,
+            'generate_thumbnail' => false,
+        ]);
+        
+        return $result['path'];
     }
 
     /**

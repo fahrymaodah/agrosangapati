@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Repositories\Contracts\HarvestRepositoryInterface;
 use App\Repositories\Contracts\CommodityRepositoryInterface;
 use App\Repositories\Contracts\CommodityGradeRepositoryInterface;
+use App\Services\Contracts\FileUploadServiceInterface;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
 use Exception;
@@ -14,15 +15,18 @@ class HarvestService
     protected HarvestRepositoryInterface $harvestRepository;
     protected CommodityRepositoryInterface $commodityRepository;
     protected CommodityGradeRepositoryInterface $gradeRepository;
+    protected FileUploadServiceInterface $fileUploadService;
 
     public function __construct(
         HarvestRepositoryInterface $harvestRepository,
         CommodityRepositoryInterface $commodityRepository,
-        CommodityGradeRepositoryInterface $gradeRepository
+        CommodityGradeRepositoryInterface $gradeRepository,
+        FileUploadServiceInterface $fileUploadService
     ) {
         $this->harvestRepository = $harvestRepository;
         $this->commodityRepository = $commodityRepository;
         $this->gradeRepository = $gradeRepository;
+        $this->fileUploadService = $fileUploadService;
     }
 
     /**
@@ -170,9 +174,9 @@ class HarvestService
 
         // Handle photo upload
         if (isset($data['harvest_photo']) && $data['harvest_photo'] instanceof UploadedFile) {
-            // Delete old photo if exists
+            // Delete old photo if exists using FileUploadService
             if ($harvest->harvest_photo) {
-                Storage::disk('public')->delete($harvest->harvest_photo);
+                $this->fileUploadService->deleteFile($harvest->harvest_photo);
             }
             $data['harvest_photo'] = $this->storePhoto($data['harvest_photo']);
         }
@@ -237,11 +241,20 @@ class HarvestService
     }
 
     /**
-     * Store harvest photo.
+     * Store harvest photo using FileUploadService with optimization.
      */
     protected function storePhoto(UploadedFile $file): string
     {
-        return $file->store('harvests', 'public');
+        $result = $this->fileUploadService->uploadImage($file, 'harvests', [
+            'optimize' => true,
+            'max_image_width' => 1600,
+            'max_image_height' => 1200,
+            'image_quality' => 85,
+            'generate_thumbnail' => true,
+            'thumbnail_size' => 400,
+        ]);
+        
+        return $result['path'];
     }
 
     /**
