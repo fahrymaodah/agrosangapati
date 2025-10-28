@@ -3,13 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Poktan extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, LogsActivity;
+    
     /**
      * The attributes that are mass assignable.
      *
@@ -96,5 +99,16 @@ class Poktan extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
+    }
+    /**
+     * Activity log options.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['gapoktan_id', 'name', 'code', 'address', 'chairman_name', 'phone', 'status'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => "Poktan was {$eventName}");
     }
 }

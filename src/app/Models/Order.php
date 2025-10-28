@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Order extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'order_number',
@@ -122,5 +124,16 @@ class Order extends Model
         $sequence = $lastOrder ? intval(substr($lastOrder->order_number, -4)) + 1 : 1;
         
         return sprintf('ORD-%s-%04d', $date, $sequence);
+    }
+    /**
+     * Activity log options.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['order_number', 'customer_name', 'phone', 'address', 'total_price', 'order_status', 'payment_status'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => "Order was {$eventName}");
     }
 }

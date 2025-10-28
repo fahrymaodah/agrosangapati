@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\SalesReportController;
 use App\Http\Controllers\Api\MarketingDashboardController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\ActivityLogController;
 
 // ============================================================
 // AUTHENTICATION ROUTES (Public - No Auth Required)
@@ -437,4 +438,31 @@ Route::prefix('dashboard/marketing')->middleware(['auth:sanctum', 'permission:vi
     Route::get('/top-products', [MarketingDashboardController::class, 'topProducts']); // Top selling products
     Route::get('/recent-orders', [MarketingDashboardController::class, 'recentOrders']); // Recent orders list
     Route::get('/pending-payments', [MarketingDashboardController::class, 'pendingPayments']); // Pending payments alert
+});
+
+// ============================================================
+// ACTIVITY LOG ROUTES (FASE 6: ADDITIONAL - ADD-003)
+// ============================================================
+Route::prefix('activity-logs')->middleware('auth:sanctum')->group(function () {
+    // List & detail
+    Route::get('/', [ActivityLogController::class, 'index']); // List all logs with pagination
+    Route::get('/{id}', [ActivityLogController::class, 'show']); // Get log detail
+    
+    // Filtering & searching
+    Route::get('/user/{userId}', [ActivityLogController::class, 'byUser']); // Logs by user
+    Route::post('/by-model', [ActivityLogController::class, 'byModel']); // Logs by model type + ID
+    Route::get('/model-type/{modelType}', [ActivityLogController::class, 'byModelType']); // Logs by model type
+    Route::get('/event/{event}', [ActivityLogController::class, 'byEvent']); // Logs by event (created/updated/deleted)
+    Route::post('/date-range', [ActivityLogController::class, 'byDateRange']); // Logs by date range
+    Route::post('/filter', [ActivityLogController::class, 'filter']); // Advanced filtering
+    Route::get('/search', [ActivityLogController::class, 'search']); // Search logs
+    
+    // Summary & analytics
+    Route::get('/recent/list', [ActivityLogController::class, 'recent']); // Recent logs
+    Route::get('/statistics/summary', [ActivityLogController::class, 'statistics']); // Activity statistics
+    Route::get('/dashboard/data', [ActivityLogController::class, 'dashboard']); // Dashboard data
+    Route::get('/user/{userId}/summary', [ActivityLogController::class, 'userSummary']); // User activity summary
+    
+    // Custom logging
+    Route::post('/custom', [ActivityLogController::class, 'logCustom']); // Log custom activity
 });

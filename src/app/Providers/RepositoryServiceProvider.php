@@ -25,6 +25,8 @@ use App\Repositories\Contracts\ShipmentRepositoryInterface;
 use App\Repositories\Eloquent\ShipmentRepository;
 use App\Repositories\Contracts\SalesDistributionRepositoryInterface;
 use App\Repositories\Eloquent\SalesDistributionRepository;
+use App\Repositories\Contracts\ActivityLogRepositoryInterface;
+use App\Repositories\Eloquent\ActivityLogRepository;
 use App\Services\Contracts\FileUploadServiceInterface;
 use App\Services\FileUploadService;
 
@@ -99,6 +101,12 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(
             SalesDistributionRepositoryInterface::class,
             SalesDistributionRepository::class
+        );
+
+        // Bind ActivityLog Repository
+        $this->app->bind(
+            ActivityLogRepositoryInterface::class,
+            ActivityLogRepository::class
         );
 
         // Bind FileUpload Service

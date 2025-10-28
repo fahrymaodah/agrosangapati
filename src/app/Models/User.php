@@ -10,11 +10,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes, HasApiTokens;
+    use HasFactory, Notifiable, SoftDeletes, HasApiTokens, LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -218,5 +220,18 @@ class User extends Authenticatable
     public function scopeByPoktan($query, int $poktanId)
     {
         return $query->where('poktan_id', $poktanId);
+    }
+
+    /**
+     * Activity log options.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email', 'role', 'poktan_id', 'phone', 'status'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->dontLogIfAttributesChangedOnly(['password', 'remember_token'])
+            ->setDescriptionForEvent(fn(string $eventName) => "User was {$eventName}");
     }
 }
