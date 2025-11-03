@@ -1,8 +1,7 @@
 # AgroSangapati - Analisis Project
 
-**Last Updated**: October 29, 2025  
-**Current Progress**: 35/56 tasks (62.5%) ✅  
-**Status**: Backend API Development Complete for Fase 1-3, Auth & Additional Features
+**Last Updated**: November 3, 2025  
+**Document Type**: Requirement Analysis & System Design
 
 ## 📋 Overview
 
@@ -148,56 +147,171 @@ cash_balance_histories
 - created_at
 ```
 
-### ✅ Implementation Status (Updated: October 25, 2025)
+---
 
-**Fase Persiapan - 100% Complete** ✅✅✅
+## 📐 System Architecture
 
-#### ✅ Completed Modules (PREP-001 to PREP-003):
+### Repository-Service-Controller Pattern
+Sistem menggunakan arsitektur 3-layer untuk pemisahan tanggung jawab:
 
-**1. PREP-001: Database Schema & Migrations**
-- **Files Created**: 20+ migration files
-- **Tables Created**:
-  - Core: `users`, `poktans`, `gapoktan`
-  - Keuangan: `transactions`, `transaction_categories`, `cash_balances`, `cash_balance_histories`, `transaction_approval_logs`
-  - Hasil Bumi: `commodities`, `commodity_grades`, `harvests`, `stocks`, `stock_movements`
-  - Pemasaran: `products`, `orders`, `order_items`, `shipments`, `sales_distributions`
-  - Auth: `personal_access_tokens`, `cache`, `jobs`
-- **Features**:
-  - Complete database structure for all 8 phases
-  - Foreign key relationships configured
-  - Soft deletes on relevant tables
-  - Timestamps on all tables
-  - Enum fields for status & types
+1. **Repository Layer**: Data access & database queries
+2. **Service Layer**: Business logic & validation
+3. **Controller Layer**: HTTP handling & API responses
 
-**2. PREP-002: Seeders & Sample Data**
-- **Files Created**: 5 seeder files
-- **Seeders**:
-  - `GapoktanPoktanSeeder.php` - 1 Gapoktan Sangapati + 3 Poktan
-  - `UserSeeder.php` - Sample users dengan berbagai role
-  - `CommoditySeeder.php` - Kopi & Kakao dengan grades
-  - `TransactionCategorySeeder.php` - 10 default categories
-  - `DatabaseSeeder.php` - Main orchestrator
-- **Sample Data**:
-  - 1 Gapoktan: Sangapati
-  - 3 Poktan: Tani Makmur, Harapan Baru, Sejahtera Bersama
-  - Users: Superadmin, Ketua Gapoktan, Ketua Poktan, Anggota
-  - 2 Commodities: Kopi Arabika & Robusta, Kakao
-  - 10 Transaction Categories (5 income + 5 expense)
+### Authentication & Authorization
+- **Token-based Authentication**: Laravel Sanctum untuk API
+- **Role-based Access Control**: 6 tingkat akses (superadmin → anggota_poktan)
+- **Multi-tenancy**: Data terisolasi per Poktan/Gapoktan
 
-**3. PREP-003: User Model & Authentication**
-- **Files Updated**: 
-  - `User.php` model extended
-  - Migration: `add_role_and_poktan_to_users_table.php`
-- **Features**:
-  - Role enum: superadmin, ketua_gapoktan, pengurus_gapoktan, ketua_poktan, pengurus_poktan, anggota_poktan
-  - poktan_id foreign key relationship
-  - Additional fields: phone, status
-  - Model relationships: poktan(), transactions(), harvests()
-  - Ready for Gates & Middleware implementation
+### File Management
+- **Photo Upload**: Receipt, harvest proof, product images
+- **Storage**: Laravel Storage (local development, S3 production)
+- **Backup**: Automated daily backup dengan Spatie Laravel Backup
+
+### Audit & Logging
+- **Activity Log**: Spatie Laravel Activitylog untuk audit trail
+- **Transaction History**: Complete audit trail untuk semua perubahan data
+- **Balance History**: Tracking perubahan saldo kas
 
 ---
 
-**Fase 1: Pengelolaan Keuangan - 100% Complete** ✅✅✅
+## 📊 Module Analysis
+
+> **Note**: Untuk progress implementasi dan task details, lihat [TASK_LIST.md](TASK_LIST.md)
+
+---
+
+## 1. DIGITALISASI PENGELOLAAN KEUANGAN
+
+### Module Requirements
+
+#### KEU-001: Master Data Kategori Transaksi
+**Purpose**: Mengelola kategori pemasukan dan pengeluaran
+
+**Features Required**:
+- CRUD kategori transaksi
+- Support kategori global (default) dan custom per Poktan
+- Kategori type: income/expense
+- Soft delete untuk data integrity
+
+**Components**:
+- Repository: TransactionCategoryRepository
+- Service: TransactionCategoryService
+- Controller: TransactionCategoryController
+
+#### KEU-002: Input Transaksi
+**Purpose**: Pencatatan pemasukan dan pengeluaran dengan bukti
+
+**Features Required**:
+- Input transaksi (income/expense)
+- Upload foto bukti transaksi
+- Link ke kategori
+- Auto-update cash balance
+- Support approval workflow
+- Validasi saldo mencukupi untuk pengeluaran
+
+**Components**:
+- Repository: TransactionRepository
+- Service: TransactionService
+- Controller: TransactionController
+
+#### KEU-003: Manajemen Saldo Kas
+**Purpose**: Real-time tracking saldo kas per Poktan
+
+**Features Required**:
+- View saldo current
+- History perubahan saldo dengan audit trail
+- Auto-calculate dari transactions
+- Alert saldo menipis
+- Lock transaksi jika saldo tidak cukup
+
+**Components**:
+- Repository: CashBalanceRepository
+- Service: CashBalanceService
+- Controller: CashBalanceController
+
+#### KEU-004: Sistem Approval Transaksi
+**Purpose**: Approval untuk transaksi di atas limit tertentu
+
+**Features Required**:
+- Approve/reject transactions
+- Approval workflow (pending → approved/rejected)
+- Approval notes & timestamp
+- Track approved_by
+- Balance update hanya setelah approved
+
+**Components**:
+- Service: TransactionService (approval methods)
+- Endpoints: /approve, /reject
+
+#### KEU-005: Laporan Keuangan Poktan
+**Purpose**: Generate laporan keuangan per Poktan
+
+**Reports Required**:
+1. Income Statement (Laporan Laba Rugi)
+2. Cash Flow Report (Arus Kas)
+3. Balance Sheet (Neraca)
+4. Transaction List (Detail Transaksi)
+5. Category Summary (Ringkasan per Kategori)
+6. Monthly Trend (Trend Bulanan)
+
+**Features**:
+- Filter by date range
+- Filter by category
+- Format currency (Rupiah)
+- Export-ready data structure
+
+**Components**:
+- Repository: FinancialReportRepository
+- Service: FinancialReportService
+- Controller: FinancialReportController
+
+#### KEU-006: Laporan Konsolidasi Gapoktan
+**Purpose**: Rekap keuangan semua Poktan untuk level Gapoktan
+
+**Reports Required**:
+1. Consolidated Income Statement
+2. Consolidated Cash Flow
+3. Consolidated Balance Sheet
+4. Poktan Comparison
+5. Consolidated Category Summary
+6. Poktan Performance Ranking
+
+**Features**:
+- Multi-Poktan aggregation
+- Poktan breakdown
+- Contribution percentage
+- Performance comparison
+- Growth calculations
+
+**Components**:
+- Repository: ConsolidatedReportRepository
+- Service: ConsolidatedReportService
+- Controller: ConsolidatedReportController
+
+#### KEU-007: Dashboard Keuangan
+**Purpose**: Overview keuangan untuk quick insights
+
+**Dashboard Poktan**:
+- Summary cards (income, expense, balance)
+- 6-month trend chart
+- Recent transactions (last 10)
+- Pending approval alerts
+
+**Dashboard Gapoktan**:
+- Consolidated summary (all Poktans)
+- Multi-poktan comparison
+- Top performing Poktans
+- Overall statistics
+
+**Components**:
+- Repository: DashboardRepository
+- Service: DashboardService
+- Controller: DashboardController
+
+---
+
+## 2. MANAJEMEN HASIL BUMI
 
 #### ✅ Completed Modules (KEU-001 to KEU-007):
 

@@ -81,6 +81,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register Filament custom CSS
+        if (class_exists(\Filament\Support\Facades\FilamentAsset::class)) {
+            \Filament\Support\Facades\FilamentAsset::register([
+                \Filament\Support\Assets\Css::make('app-styles', asset('build/assets/app-Bisr1Asj.css')),
+            ]);
+        }
+
         // Define authorization gates
         
         // Superadmin can do everything

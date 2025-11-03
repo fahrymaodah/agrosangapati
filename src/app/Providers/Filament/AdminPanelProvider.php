@@ -18,6 +18,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use App\Http\Middleware\DevelopmentAutoLogin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -27,7 +28,8 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            // DEVELOPMENT: Disable login untuk testing
+            // ->login()
             ->brandName('AgroSangapati')
             ->colors([
                 'primary' => Color::Green,
@@ -51,9 +53,12 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                // DEVELOPMENT: Auto login as superadmin
+                DevelopmentAutoLogin::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                // DEVELOPMENT: Comment out untuk bypass authentication
+                // Authenticate::class,
             ]);
     }
 }
