@@ -18,4 +18,22 @@ class EditUser extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Convert status enum to is_active toggle boolean
+        $data['is_active'] = ($data['status'] ?? 'active') === 'active';
+        
+        return $data;
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Convert is_active toggle boolean to status enum
+        // Toggle sends true/false, so we check explicitly
+        $data['status'] = ($data['is_active'] ?? false) === true ? 'active' : 'inactive';
+        unset($data['is_active']);
+        
+        return $data;
+    }
 }

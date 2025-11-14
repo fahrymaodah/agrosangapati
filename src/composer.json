@@ -7,11 +7,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "ariaieboy/filament-currency": "^2.0",
         "filament/filament": "^4.1",
         "intervention/image-laravel": "^1.5",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
+        "pxlrbt/filament-excel": "^3.2",
         "spatie/laravel-activitylog": "^4.10",
         "spatie/laravel-backup": "^9.3"
     },
